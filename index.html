@@ -57,6 +57,10 @@
   .notice.info { background: var(--green-soft); color: var(--green); }
 
   .dining { display: flex; gap: 8px; margin: 12px 16px 0; }
+  .pay { margin-top: 12px; }
+  .pay .lbl { font-size: 13px; font-weight: 800; color: var(--muted); margin-bottom: 6px; }
+  .pay .dining { margin: 0; }
+  .pay .dining button { padding-left: 4px; padding-right: 4px; }
   .dining button {
     flex: 1; border: 1.5px solid var(--line); background: var(--card); border-radius: 12px;
     padding: 10px 8px; font-weight: 700; font-size: 15px;
@@ -220,6 +224,9 @@ const T = {
     notePh: "例：ストローいりません",
     order: "注文する",
     payNote: "注文後、レジで注文番号をお伝えのうえお支払いください。お支払い後に作り始めます。",
+    pay: "お支払い方法（レジでお支払い）", payPick: "お支払い方法を選んでください",
+    payCash: "現金", payCard: "クレジット・電子マネー", payCardSub: "タッチ決済もOK", payQR: "QRコード決済", payQRSub: "PayPay など",
+    payAt: "お支払い：",
     remove: "削除",
     total: "合計（税込）",
     empty: "カートは空です",
@@ -261,6 +268,9 @@ const T = {
     notePh: "例如：不要吸管",
     order: "下单",
     payNote: "下单后请到柜台报单号付款，付款后开始制作。",
+    pay: "付款方式（到柜台付款）", payPick: "请选择付款方式",
+    payCash: "现金", payCard: "信用卡・电子钱包", payCardSub: "可以感应支付", payQR: "扫码支付", payQRSub: "PayPay 等",
+    payAt: "付款方式：",
     remove: "删除",
     total: "合计（含税）",
     empty: "购物车是空的",
@@ -302,6 +312,9 @@ const T = {
     notePh: "e.g. No straw, please",
     order: "Place order",
     payNote: "After ordering, tell the staff your order number at the counter and pay. We start making it after payment.",
+    pay: "How will you pay? (at the counter)", payPick: "Please choose how you'll pay",
+    payCash: "Cash", payCard: "Card / e-money", payCardSub: "Contactless OK", payQR: "QR payment", payQRSub: "PayPay etc.",
+    payAt: "Payment: ",
     remove: "Remove",
     total: "Total (tax incl.)",
     empty: "Your cart is empty",
@@ -349,6 +362,7 @@ let state = {
   today: "",
   dining: SEAT ? "eatIn" : "takeOut",
   cart: [],
+  payment: null,           // 到柜台怎么付：cash / card / qr（下一单默认还是这个）
   note: "",
   error: "",
   activeCat: null,
@@ -653,9 +667,12 @@ function openCart() {
         placeholder: t("notePh"), maxlength: "200", "aria-label": t("note"),
         oninput: (e) => { state.note = e.target.value; },
       }, state.note),
+      h("div", { class: "pay" }, h("div", { class: "lbl" }, t("pay")),
+        h("div", { class: "dining" }, [["cash", t("payCash"), ""], ["card", t("payCard"), t("payCardSub")], ["qr", t("payQR"), t("payQRSub")]].map(([v, label, sub]) =>
+          h("button", { class: state.payment === v ? "on" : "", "data-pay": v, onclick: () => { state.payment = v; draw(); } }, label, sub ? h("small", {}, sub) : null)))),
       state.error ? h("div", { class: "error" }, state.error) : null,
-      h("button", { class: "primary", disabled: state.submitting || !state.accepting, onclick: submitOrder },
-        state.submitting ? "…" : t("order") + "  " + yen(cartTotal())),
+      h("button", { class: "primary", disabled: state.submitting || !state.accepting || !state.payment, onclick: submitOrder },
+        state.submitting ? "…" : state.payment ? t("order") + "  " + yen(cartTotal()) : t("payPick")),
       h("div", { class: "paynote" }, t("payNote")),
     );
   };
@@ -675,6 +692,7 @@ async function submitOrder() {
       p_dining: state.dining,
       p_seat: SEAT || null,
       p_note: state.note || null,
+      p_payment: state.payment || null,
       p_items: state.cart.map((l) => ({
         itemID: l.itemID, size: l.size, temp: l.temp, sweetness: l.sweetness, toppingIDs: l.toppingIDs, quantity: l.quantity,
       })),
@@ -706,6 +724,7 @@ function renderStatus() {
       h("div", { class: "num" + (o.status === "ready" ? " ready" : "") }, pickup || "Q" + o.number),
       pickup ? h("div", { class: "lbl" }, t("yourNo") + " Q" + o.number) : null,
       h("div", { class: "msg" }, t(o.status) || ""),
+      o.status === "received" && o.payment ? h("div", { class: "lbl", "data-paid-by": o.payment }, t("payAt") + t({ cash: "payCash", card: "payCard", qr: "payQR" }[o.payment])) : null,
       o.status === "cancelled" && o.cancelReason ? h("div", { class: "lbl" }, t("reason") + "：" + o.cancelReason) : null,
       o.status !== "cancelled" ? h("div", { class: "steps" },
         [t("stepReceived"), t("stepAccepted"), t("stepReady")].map((label, i) =>
