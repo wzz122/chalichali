@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>外卖单 → Waiter 对照表</title>
+<style>
+  /* 贴在外卖机器旁边的一张 A4：看外卖小票上的名字，找到在 Waiter 哪个分类、日文叫什么。黑白打印也清楚 */
+  @page { size: A4 portrait; margin: 7mm; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #E9ECE9; color: #111; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "PingFang SC", "Noto Sans JP", "Noto Sans SC", sans-serif; }
+  .page { width: 210mm; min-height: 297mm; margin: 16px auto; background: #fff; padding: 9mm; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12); }
+  h1 { margin: 0; font-size: 6mm; }
+  .sub { margin-top: 1mm; font-size: 3.1mm; color: #444; line-height: 1.45; }
+  .cols { margin-top: 3mm; columns: 2; column-gap: 6mm; }
+  .cat { margin-bottom: 2.5mm; }
+  .cat h2 { break-after: avoid; margin: 0; background: #222; color: #fff; font-size: 3.9mm; padding: 1mm 2.5mm; border-radius: 1.2mm; display: flex; justify-content: space-between; }
+  .cat h2 small { font-size: 3.2mm; font-weight: 700; }
+  .row { break-inside: avoid; display: grid; grid-template-columns: 1fr auto; column-gap: 2mm; padding: 1.05mm 1mm; border-bottom: 0.2mm solid #ccc; }
+  .jp { font-size: 3.8mm; font-weight: 900; line-height: 1.25; }
+  .zh { font-size: 3.2mm; color: #333; align-self: center; text-align: right; }
+  .uber { grid-column: 1 / -1; font-size: 2.8mm; color: #000; margin-top: 0.4mm; }
+  .uber b { border: 0.2mm solid #000; border-radius: 0.8mm; padding: 0 1mm; font-size: 2.5mm; margin-right: 1mm; }
+  .foot { margin-top: 2mm; font-size: 2.8mm; color: #555; line-height: 1.5; }
+  @media print {
+    html, body { background: #fff; }
+    .page { margin: 0; box-shadow: none; padding: 0; min-height: auto; width: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>外卖单 → Waiter 对照表</h1>
+  <div class="sub">熊猫、Uber、Rocket 来单后：看小票上的名字 → 在 Waiter 里先点黑条上的分类 → 再点粗体日文名。外卖单点 Waiter 最后面的「熊猫」「火箭」「Uber」那一格。<br>
+    小票上写法和这里不一样的，标了 <b style="border:0.2mm solid #000;border-radius:0.8mm;padding:0 1mm;font-size:2.5mm">Uber</b>（Uber Eats 上的写法）。</div>
+  <div class="cols" id="cols"></div>
+  <div class="foot" id="foot"></div>
+</div>
+
+<script src="menu.js"></script>
+<script>
+"use strict";
+// Uber Eats 店铺页上和菜单屏写法不一样的（2026-10-31 从 ubereats.com 的茶里茶里 ChaLiChaLi 页面抄的，格式「中文/日文」）。
+// 熊猫、Rocket 的写法拿到真小票后再加
+const UBER = {
+  "black-rice": "血糯米奶茶/赤餅米ミルクティー",
+  "mango-cheese": "芒芒果海/マンゴチーズ",
+  "longan-coco": "龍眼生打椰/ロンガンココナッツミルク",
+  "lemon-sijiqing": "柠檬四季春/レモンシキシュンティー",
+  "avocado-yogurt": "牛油優酪氷/アボカドヨーグルトセーキ",
+  "mango-yogurt": "多芒優酪氷/マンゴーヨーグルトセーキ",
+  "berry-yogurt": "苺苺優酪氷/ストロベリーヨーグルトセーキ",
+  "salt-osmanthus": "老盐桂花牛乳/塩桂花ミルク",
+  "coco-redbean": "椰冻冻红豆沙/あずきミルクセーキ",
+};
+const MENU = window.CHALI_MENU;
+// Waiter 里的叫法还没对照过，先用菜单屏的日文名（和接单屏一样，见 waiter-map.js）
+function el(tag, cls, ...children) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  for (const c of children) if (c != null) e.append(c.nodeType ? c : document.createTextNode(c));
+  return e;
+}
+const cols = document.getElementById("cols");
+for (const cat of MENU.categories) {
+  const items = MENU.items.filter((i) => i.categoryID === cat.id);
+  cols.append(el("div", "cat",
+    el("h2", null, cat.nameJP, el("small", null, cat.name)),
+    ...items.map((i) => el("div", "row",
+      el("div", "jp", i.nameJP),
+      el("div", "zh", i.name),
+      UBER[i.id] ? el("div", "uber", el("b", null, "Uber"), UBER[i.id]) : null)),
+  ));
+}
+document.getElementById("foot").textContent =
+  "小料：" + MENU.toppings.map((t) => t.nameJP + "＝" + t.name).join("　") +
+  "　｜　Waiter 里的名字还没逐个对过，用的是店里菜单屏的日文名；找不到时用接单屏右上角的「查饮品」。";
+</script>
+</body>
+</html>

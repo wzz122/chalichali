@@ -250,6 +250,15 @@ const LS_CHECKS = "chali-staff-checks";
 const LS_DELIVERY = "chali-staff-delivery";   // 外卖单（只存在这台平板上，留 3 天）
 const LS_ALIASES = "chali-staff-aliases";     // 店员教过的外卖平台叫法 → 饮品 id
 const LS_WAITER_NO = "chali-staff-waiter-no"; // 店员在卡片上改过的 Waiter 号（订单 id → 号）
+// 「🛵 外卖单」按钮默认藏起来（2026-10-31 用户：外卖单看着平台小票直接录 Waiter 更省事）。
+// 网址加 ?delivery=1 打开（这台平板会记住），?delivery=0 再藏起来；今天已经放进来过外卖单的话也会显示
+const LS_DELIVERY_ON = "chali-staff-delivery-on";
+{
+  const v = new URLSearchParams(location.search).get("delivery");
+  if (v === "1" || v === "0") try { localStorage.setItem(LS_DELIVERY_ON, v); } catch (e) { /* 存不了就只管这一次 */ }
+}
+const DELIVERY_ON = (() => { try { return localStorage.getItem(LS_DELIVERY_ON) === "1"; } catch (e) { return false; } })()
+  || new URLSearchParams(location.search).get("delivery") === "1";
 
 function readHash() {
   const p = new URLSearchParams(location.hash.slice(1));
@@ -779,8 +788,8 @@ function renderHeader() {
     renderTodo(),
     h("span", { class: "grow" }),
     h("span", { class: "stats" }, "今日扫码 ", h("b", {}, done.length + " 单"), " · ", h("b", {}, yen(done.reduce((s, o) => s + o.total, 0))),
-      " · 外卖 ", h("b", {}, todayDeliveries().filter((d) => d.status !== "cancelled").length + " 单")),
-    h("button", { class: "tool dlv", onclick: openDelivery }, "🛵 外卖单"),
+      deliveryShown() ? [" · 外卖 ", h("b", {}, todayDeliveries().filter((d) => d.status !== "cancelled").length + " 单")] : null),
+    deliveryShown() ? h("button", { class: "tool dlv", onclick: openDelivery }, "🛵 外卖单") : null,
     h("button", { class: "tool", onclick: () => { state.soldDraft = new Set(state.soldOut); state.sheet = "soldout"; render(); } },
       "售罄" + (state.soldOut.size ? "（" + state.soldOut.size + "）" : "")),
     h("button", { class: "tool", onclick: openLookup }, "🔍 查饮品"),
@@ -791,6 +800,8 @@ function renderHeader() {
 }
 
 // 还有几单没录进 Waiter（第①列的扫码单 + 外卖单）；点一下跳到最早那张
+function deliveryShown() { return DELIVERY_ON || todayDeliveries().length > 0; }
+
 function renderTodo() {
   const left = active("received");
   if (!left.length) return h("span", { class: "todo clear" }, "✓ 都录进 Waiter 了");
