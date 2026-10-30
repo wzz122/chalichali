@@ -44,6 +44,10 @@
   .qr svg { width: 100%; height: 100%; display: block; }
   .how { margin-top: 6mm; font-size: 4.6mm; font-weight: 800; line-height: 1.4; }
   .how small { display: block; margin-top: 1mm; font-size: 3.6mm; font-weight: 700; color: #6B746F; }
+  /* 二维码上面的宣传语（「一个码」用）：黑白打印也清楚 */
+  .cta { margin-top: 5mm; width: 100%; border: 0.8mm solid #1F2A24; border-radius: 4mm; padding: 2.5mm 3mm; }
+  .cta b { display: block; font-size: 7.6mm; font-weight: 900; line-height: 1.25; }
+  .cta small { display: block; margin-top: 0.8mm; font-size: 4.2mm; font-weight: 800; color: #333; }
   .testmark { margin-top: 2mm; font-size: 3.6mm; font-weight: 900; color: #C62828; border: 0.5mm solid #C62828; border-radius: 2mm; padding: 0.5mm 3mm; }
   .url { margin-top: auto; font-size: 2.6mm; color: #9AA19D; word-break: break-all; }
   @media print {
@@ -66,6 +70,7 @@
   </select>
   <label id="seatBox">桌号 <input id="seat" maxlength="10"></label>
   <label id="tablesBox">桌子数 <input id="tables" type="number" min="1" max="30"></label>
+  <label id="notestBox"><input type="checkbox" id="notest"> 不印「测试用」</label>
   <select id="paper"><option value="a4x4">A4 竖放，一张印四份（剪开）</option><option value="a4">A4 横放，一张印两份（剪开）</option><option value="a5">A5，一张一份</option></select>
   <button onclick="window.print()">打印</button>
   <span>「一个码」：全店贴同一个码，顾客打开后先选堂食还是打包（默认，一张 A4 印 4 张同样的）。「一整套」：每张桌子一个带桌号的码 + 前台的码。桌子上的二维码带桌号：顾客点的是「店内」，接单屏上写「店内 · 桌 1」，Waiter 里点「テーブル 1」。前台的二维码不带桌号：点的是「外带」，做好到柜台取。打印时选「实际大小 / 100%」。</span>
@@ -88,6 +93,7 @@ $("kind").value = ["single", "set", "table", "counter", "queue"].includes(params
 $("seat").value = params.get("t") || "1";
 $("tables").value = params.get("n") || CONFIG.tables || 3;
 $("paper").value = ["a4", "a5"].includes(params.get("paper")) ? params.get("paper") : "a4x4";
+$("notest").checked = params.get("notest") === "1";
 
 function el(tag, cls, ...children) {
   const e = document.createElement(tag);
@@ -120,11 +126,12 @@ function sheet(seat, queue, single) {
     el("div", "brand", "茶里茶里"),
     el("div", "title", "モバイルオーダー", el("small", null, "扫码点单 · Mobile Order")),
     where,
+    single ? el("div", "cta", el("b", null, "本日よりスマホで注文できます！"), el("small", null, "从今天开始可以扫码点单！ · Order on your phone!")) : null,
     queue ? el("div", "queue", "並んでいる間にスマホで注文できます", el("small", null, "排队时可以先扫码点单 · Order on your phone while you wait")) : null,
     qrBox,
     el("div", "how", "ご注文後、レジで番号を伝えてお支払いください", el("small", null, "下单后到柜台报单号付款 · Order, then pay at the counter")),
-    TEST ? el("div", "testmark", "测试用 · TEST") : null,
-    el("div", "url", url.href),
+    TEST && !$("notest").checked ? el("div", "testmark", "测试用 · TEST") : null,
+    TEST && $("notest").checked ? null : el("div", "url", url.href),   // 不印「测试用」时网址也不印（网址里有 test）
   );
 }
 
@@ -134,6 +141,7 @@ function draw() {
   const paper = { a4x4: [4, "A4 portrait"], a4: [2, "A4 landscape"], a5: [1, "A5 portrait"] }[$("paper").value];
   const per = paper[0];
   $("seatBox").hidden = kind !== "table";
+  $("notestBox").hidden = !TEST;
   $("tablesBox").hidden = kind !== "set";
   let sheets;
   if (kind === "single") {
@@ -151,7 +159,7 @@ function draw() {
   for (let i = 0; i < sheets.length; i += per) pages.push(el("div", "page " + $("paper").value, ...sheets.slice(i, i + per)));
   $("pages").replaceChildren(...pages);
 }
-for (const id of ["kind", "seat", "tables", "paper"]) $(id).addEventListener("input", draw);
+for (const id of ["kind", "seat", "tables", "paper", "notest"]) $(id).addEventListener("input", draw);
 draw();
 </script>
 </body>
