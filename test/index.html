@@ -43,9 +43,13 @@
     padding: 2px 7px; border-radius: 999px;
   }
   .brand .spacer { flex: 1; }
-  .lang { display: flex; border: 1.5px solid var(--line); border-radius: 999px; overflow: hidden; }
-  .lang button { border: 0; background: transparent; padding: 4px 10px; font-size: 13px; font-weight: 700; color: var(--muted); }
-  .lang button.on { background: var(--green); color: #fff; }
+  .lang { display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--line); border-radius: 999px; padding: 2px 4px 2px 10px; font-size: 14px; }
+  .lang select { border: 0; background: transparent; font: inherit; font-size: 14px; font-weight: 700; color: var(--green); padding: 4px 2px; }
+  .where { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin: 12px 16px 0; padding: 12px 14px; border-radius: 14px; background: var(--card); border: 2px solid var(--green); }
+  .where b { font-size: 17px; color: var(--green); }
+  .where span { font-size: 14px; font-weight: 700; }
+  .where.takeOut { border-color: var(--orange); }
+  .where.takeOut b { color: var(--orange); }
   .sub { margin-top: 4px; font-size: 13px; color: var(--muted); }
   .seat { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 6px; background: var(--green-soft); color: var(--green); font-weight: 700; }
 
@@ -93,8 +97,11 @@
   .item .names { flex: 1; min-width: 0; }
   .item .name { font-size: 18px; font-weight: 800; }
   .item .alt { font-size: 12px; color: var(--muted); }
-  .item .price { font-size: 14px; font-weight: 700; margin-top: 4px; }
-  .item .hot { color: var(--orange); font-size: 12px; font-weight: 700; margin-left: 6px; }
+  /* 价格、「含珍珠」、「可做热」各自不断行，放不下整块换到下一行（俄语这些字比较长） */
+  .item .price { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 6px; font-size: 14px; font-weight: 700; margin-top: 4px; }
+  .item .price .p { white-space: nowrap; }
+  .item .price .inc, .item .price .hot { margin-left: 0; }
+  .item .hot { white-space: nowrap; color: var(--orange); font-size: 12px; font-weight: 700; margin-left: 6px; }
   .inc { white-space: nowrap; color: #8B5E3C; background: #F3EAE2; font-size: 12px; font-weight: 700; margin-left: 6px; padding: 1px 7px; border-radius: 6px; }
   .item .plus {
     flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%;
@@ -194,6 +201,7 @@
 <div class="cartbar hidden" id="cartbar"></div>
 
 <script src="config.js"></script>
+<script src="menu-i18n.js"></script>
 <script>
 "use strict";
 
@@ -210,9 +218,10 @@ const ORDER_KEY = "chali-order-" + STORE;
 const T = {
   ja: {
     sub: "モバイルオーダー · お支払いはレジで",
-    seat: "席",
-    takeOut: "お持ち帰り", takeOutTax: "税率 8%",
-    eatIn: "店内でお召し上がり", eatInTax: "税率 10%",
+    title: "モバイルオーダー",
+    seat: "テーブル",
+    takeOut: "お持ち帰り", takeOutHint: "できあがったらカウンターでお受け取りください",
+    eatIn: "店内でお召し上がり",
     closed: "ただいまモバイルオーダーを停止しています。レジでご注文ください。",
     soldOut: "売切",
     hot: "HOT可",
@@ -240,7 +249,7 @@ const T = {
     stepReceived: "注文", stepAccepted: "お支払い・製作中", stepReady: "できあがり",
     newOrder: "新しく注文する",
     reason: "理由",
-    included: "入り",
+    included: "{x}入り",
     faqBtn: "はじめての方へ（よくある質問）",
     faq: ["タピオカミルクティーは全部タピオカ入りです（追加しなくて大丈夫）", "ホットにできるのはタピオカミルクティーだけです", "甘さ：100% が標準、120% は甘め、0% は砂糖なし", "氷：普通・少なめ・なし（ミルクティーは常温もできます）", "サイズ：ミルクティーは M と L、ほかのドリンクは 1 サイズです", "トッピングはいくつでも追加できます（別料金）", "注文したら、レジで注文番号を伝えてお支払いください"],
     errors: {
@@ -254,9 +263,10 @@ const T = {
   },
   zh: {
     sub: "扫码点单 · 到柜台付款",
-    seat: "座位",
-    takeOut: "外带", takeOutTax: "税率 8%",
-    eatIn: "店内用", eatInTax: "税率 10%",
+    title: "扫码点单",
+    seat: "桌号",
+    takeOut: "外带", takeOutHint: "做好后到柜台取",
+    eatIn: "店内用",
     closed: "现在暂停扫码点单，请到柜台点单。",
     soldOut: "售罄",
     hot: "可做热",
@@ -284,7 +294,7 @@ const T = {
     stepReceived: "下单", stepAccepted: "付款・制作中", stepReady: "可取餐",
     newOrder: "再点一单",
     reason: "原因",
-    included: "含",
+    included: "含{x}",
     faqBtn: "第一次来？常见问题",
     faq: ["珍珠奶茶全部含珍珠，不用另加", "只有珍珠奶茶可以做热的", "甜度：100% 是标准，120% 更甜，0% 不加糖", "冰量：普通冰、少冰、去冰（奶茶还可以常温）", "大小：奶茶有 M 和 L，其他饮品只有一种", "小料可以加好几种，另外算钱", "下单后到柜台报单号付款"],
     errors: {
@@ -298,9 +308,10 @@ const T = {
   },
   en: {
     sub: "Mobile order · Pay at the counter",
+    title: "Mobile Order",
     seat: "Table",
-    takeOut: "Take out", takeOutTax: "8% tax",
-    eatIn: "Eat in", eatInTax: "10% tax",
+    takeOut: "Take out", takeOutHint: "Pick it up at the counter when it's ready",
+    eatIn: "Eat in",
     closed: "Mobile ordering is paused right now. Please order at the counter.",
     soldOut: "Sold out",
     hot: "Hot OK",
@@ -328,7 +339,7 @@ const T = {
     stepReceived: "Ordered", stepAccepted: "Paid · Making", stepReady: "Ready",
     newOrder: "Order again",
     reason: "Reason",
-    included: "with",
+    included: "with {x}",
     faqBtn: "First time? FAQ",
     faq: ["All bubble milk teas already come with tapioca pearls", "Only bubble milk teas can be served hot", "Sweetness: 100% is standard, 120% is sweeter, 0% has no sugar", "Ice: regular, less or none (milk teas can also be room temperature)", "Size: milk teas come in M or L; other drinks have one size", "You can add as many toppings as you like (extra charge)", "After ordering, tell your order number at the counter and pay there"],
     errors: {
@@ -340,27 +351,174 @@ const T = {
       store: "Shop not found. Please scan the QR code again.",
     },
   },
+  yue: {
+    title: "掃碼落單",
+    sub: "掃碼落單 · 喺櫃位俾錢",
+    seat: "枱號",
+    takeOut: "外賣自取", takeOutHint: "整好之後喺櫃位攞",
+    eatIn: "堂食",
+    closed: "而家暫停掃碼落單，請去櫃位落單。",
+    soldOut: "賣晒",
+    hot: "可以做熱",
+    size: "大細", temp: "溫度・冰量", sweet: "甜度", toppings: "配料（可以揀幾樣）", qty: "數量",
+    add: "加入購物車",
+    viewCart: "睇購物車",
+    cart: "我嘅訂單",
+    note: "備註（唔填都得）",
+    notePh: "例如：唔要飲管",
+    order: "落單",
+    payNote: "落單之後去櫃位講單號俾錢，俾完錢就開始整。",
+    pay: "點樣俾錢（喺櫃位俾）", payPick: "請揀俾錢方式",
+    payCash: "現金", payCard: "信用卡・電子錢包", payCardSub: "拍卡都得", payQR: "掃碼支付", payQRSub: "PayPay 等",
+    payAt: "俾錢方式：",
+    remove: "刪除",
+    total: "合計（含稅）",
+    empty: "購物車係空嘅",
+    yourNo: "單號",
+    pickupNo: "取餐號",
+    received: "請去櫃位講呢個單號，然後俾錢。",
+    accepted: "收到錢喇，而家幫你整緊。",
+    ready: "整好喇！請去櫃位攞。",
+    cancelled: "唔好意思，呢張單已經取消咗。",
+    completed: "多謝幫襯！",
+    stepReceived: "落單", stepAccepted: "俾錢・整緊", stepReady: "可以攞",
+    newOrder: "再落一單",
+    reason: "原因",
+    included: "已經有{x}",
+    faqBtn: "第一次嚟？常見問題",
+    faq: ["珍珠奶茶全部已經有珍珠，唔使另外加", "淨係珍珠奶茶可以做熱", "甜度：100% 係正常，120% 甜啲，0% 唔落糖", "冰量：正常冰、少冰、走冰（奶茶仲可以常溫）", "大細：奶茶有 M 同 L，其他飲品得一種大細", "配料可以加幾樣，另外計錢", "落單之後去櫃位講單號俾錢"],
+    errors: {
+      not_accepting: "而家暫停掃碼落單，請去櫃位落單。",
+      sold_out: "有啲飲品啱啱賣晒，請睇吓購物車。",
+      busy: "而家好多單，請等陣再試。",
+      network: "網絡連唔到，請再試一次。",
+      default: "落單唔成功，請去櫃位落單。",
+      store: "搵唔到呢間舖頭，請重新掃碼。",
+    },
+  },
+  ko: {
+    title: "모바일 주문",
+    sub: "모바일 주문 · 결제는 카운터에서",
+    seat: "테이블",
+    takeOut: "포장", takeOutHint: "음료가 준비되면 카운터에서 받아 가세요",
+    eatIn: "매장 이용",
+    closed: "지금은 모바일 주문을 받지 않습니다. 카운터에서 주문해 주세요.",
+    soldOut: "품절",
+    hot: "HOT 가능",
+    size: "사이즈", temp: "온도・얼음", sweet: "당도", toppings: "토핑 (여러 개 선택 가능)", qty: "수량",
+    add: "장바구니에 담기",
+    viewCart: "장바구니 보기",
+    cart: "주문 내역",
+    note: "요청 사항 (선택)",
+    notePh: "예: 빨대는 필요 없어요",
+    order: "주문하기",
+    payNote: "주문 후 카운터에서 주문 번호를 말씀하시고 결제해 주세요. 결제 후에 만들기 시작합니다.",
+    pay: "결제 방법 (카운터에서 결제)", payPick: "결제 방법을 선택해 주세요",
+    payCash: "현금", payCard: "신용카드・전자머니", payCardSub: "터치 결제 가능", payQR: "QR 결제", payQRSub: "PayPay 등",
+    payAt: "결제 방법: ",
+    remove: "삭제",
+    total: "합계 (세금 포함)",
+    empty: "장바구니가 비어 있습니다",
+    yourNo: "주문 번호",
+    pickupNo: "호출 번호",
+    received: "카운터에서 이 번호를 말씀하시고 결제해 주세요.",
+    accepted: "결제 감사합니다. 지금 만들고 있어요.",
+    ready: "준비되었습니다! 카운터에서 받아 가세요.",
+    cancelled: "죄송합니다. 이 주문은 취소되었습니다.",
+    completed: "이용해 주셔서 감사합니다.",
+    stepReceived: "주문", stepAccepted: "결제・제조 중", stepReady: "준비 완료",
+    newOrder: "새로 주문하기",
+    reason: "사유",
+    included: "{x} 포함",
+    faqBtn: "처음이신가요? 자주 묻는 질문",
+    faq: ["버블 밀크티에는 모두 타피오카 펄이 들어 있어요 (따로 추가하지 않아도 돼요)", "따뜻하게(HOT) 만들 수 있는 건 버블 밀크티뿐이에요", "당도: 100%가 기본, 120%는 더 달게, 0%는 설탕 없음", "얼음: 보통・적게・없음 (밀크티는 상온도 가능해요)", "사이즈: 밀크티는 M과 L, 다른 음료는 한 가지 사이즈예요", "토핑은 여러 개 추가할 수 있어요 (추가 요금)", "주문 후 카운터에서 주문 번호를 말씀하시고 결제해 주세요"],
+    errors: {
+      not_accepting: "지금은 모바일 주문을 받지 않습니다. 카운터에서 주문해 주세요.",
+      sold_out: "방금 품절된 상품이 있어요. 장바구니를 확인해 주세요.",
+      busy: "주문이 많아 혼잡합니다. 잠시 후 다시 시도해 주세요.",
+      network: "연결에 실패했습니다. 다시 시도해 주세요.",
+      default: "주문을 접수하지 못했습니다. 카운터에서 주문해 주세요.",
+      store: "매장을 찾을 수 없습니다. QR 코드를 다시 스캔해 주세요.",
+    },
+  },
+  ru: {
+    title: "Заказ с телефона",
+    sub: "Заказ с телефона · Оплата на кассе",
+    seat: "Стол",
+    takeOut: "С собой", takeOutHint: "Когда заказ будет готов, заберите его на кассе",
+    eatIn: "В заведении",
+    closed: "Сейчас заказы с телефона не принимаются. Пожалуйста, закажите на кассе.",
+    soldOut: "Нет в наличии",
+    hot: "Можно горячим",
+    size: "Размер", temp: "Температура / лёд", sweet: "Сладость", toppings: "Добавки (можно несколько)", qty: "Количество",
+    add: "В корзину",
+    viewCart: "Корзина",
+    cart: "Ваш заказ",
+    note: "Пожелания (необязательно)",
+    notePh: "Например: без трубочки",
+    order: "Заказать",
+    payNote: "После заказа назовите номер заказа на кассе и оплатите. Мы начнём готовить после оплаты.",
+    pay: "Способ оплаты (на кассе)", payPick: "Выберите способ оплаты",
+    payCash: "Наличные", payCard: "Карта / эл. деньги", payCardSub: "Можно бесконтактно", payQR: "Оплата по QR", payQRSub: "PayPay и др.",
+    payAt: "Оплата: ",
+    remove: "Удалить",
+    total: "Итого (с налогом)",
+    empty: "Корзина пуста",
+    yourNo: "Номер заказа",
+    pickupNo: "Номер для выдачи",
+    received: "Назовите этот номер на кассе и оплатите заказ.",
+    accepted: "Спасибо за оплату! Мы уже готовим ваш заказ.",
+    ready: "Готово! Заберите заказ на кассе.",
+    cancelled: "Извините, этот заказ отменён.",
+    completed: "Спасибо, что пришли!",
+    stepReceived: "Заказ", stepAccepted: "Оплата · Готовим", stepReady: "Готово",
+    newOrder: "Новый заказ",
+    reason: "Причина",
+    included: "уже внутри: {x}",
+    faqBtn: "Впервые у нас? Частые вопросы",
+    faq: ["Во всех молочных чаях с тапиокой тапиока уже есть — добавлять не нужно", "Горячими можно сделать только молочные чаи с тапиокой", "Сладость: 100% — стандарт, 120% — слаще, 0% — без сахара", "Лёд: обычный, меньше или без льда (молочный чай можно комнатной температуры)", "Размер: молочные чаи — M и L, остальные напитки — один размер", "Можно добавить сколько угодно добавок (за доплату)", "После заказа назовите номер на кассе и оплатите"],
+    errors: {
+      not_accepting: "Сейчас заказы с телефона не принимаются. Пожалуйста, закажите на кассе.",
+      sold_out: "Что-то только что закончилось. Проверьте корзину.",
+      busy: "Сейчас много заказов. Попробуйте чуть позже.",
+      network: "Нет соединения. Попробуйте ещё раз.",
+      default: "Не удалось принять заказ. Пожалуйста, закажите на кассе.",
+      store: "Магазин не найден. Отсканируйте QR-код ещё раз.",
+    },
+  },
 };
 
 const TEMP = {
   ja: { hot: "ホット", normalIce: "氷普通", lessIce: "氷少なめ", roomTemp: "常温", noIce: "氷なし" },
   zh: { hot: "HOT", normalIce: "普通冰", lessIce: "少冰", roomTemp: "常温", noIce: "去冰" },
   en: { hot: "Hot", normalIce: "Regular ice", lessIce: "Less ice", roomTemp: "Room temp", noIce: "No ice" },
+  yue: { hot: "熱", normalIce: "正常冰", lessIce: "少冰", roomTemp: "常溫", noIce: "走冰" },
+  ko: { hot: "HOT", normalIce: "얼음 보통", lessIce: "얼음 적게", roomTemp: "상온", noIce: "얼음 없음" },
+  ru: { hot: "Горячий", normalIce: "Обычный лёд", lessIce: "Меньше льда", roomTemp: "Комнатной темп.", noIce: "Без льда" },
 };
+
+// 语言切换的顺序和显示名；htmlLang 给浏览器选字体、读屏用
+const LANGS = [
+  ["ja", "日本語", "ja"], ["zh", "简体中文", "zh-CN"], ["yue", "粵語", "zh-HK"],
+  ["ko", "한국어", "ko"], ["en", "English", "en"], ["ru", "Русский", "ru"],
+];
+const I18N = window.CHALI_MENU_I18N || {};
 
 function guessLang() {
   const l = (navigator.language || "").toLowerCase();
-  return l.startsWith("zh") ? "zh" : l.startsWith("ja") ? "ja" : "en";
+  if (l.startsWith("yue") || /^zh-(hk|mo)/.test(l)) return "yue";
+  for (const code of ["zh", "ja", "ko", "ru"]) if (l.startsWith(code)) return code;
+  return "en";
 }
 let lang = localStorage.getItem("chali-lang") || guessLang();
-if (!T[lang]) lang = "ja";
+if (!T[lang]) lang = guessLang();
 let state = {
   loading: true,
   storeName: "茶里茶里",
   accepting: false,
   menu: null,
   today: "",
-  dining: SEAT ? "eatIn" : "takeOut",
+  dining: SEAT ? "eatIn" : "takeOut",   // 由二维码决定，顾客不用选
   cart: [],
   payment: null,           // 到柜台怎么付：cash / card / qr（下一单默认还是这个）
   note: "",
@@ -372,15 +530,21 @@ let state = {
 
 const t = (key) => T[lang][key];
 const yen = (n) => "¥" + Number(n).toLocaleString("ja-JP");
-// 顾客语言的名字；副标题用日文（中文、英文顾客跟店员说日文名也能对上），日文顾客副标题用中文
-const nameOf = (x) => (lang === "ja" ? x.nameJP || x.name : lang === "en" ? x.nameEN || x.nameJP || x.name : x.name || x.nameJP);
+// 顾客语言的名字；副标题用日文（外国顾客跟店员说日文名也能对上），日文顾客副标题用中文
+// 粤语、韩语、俄语的名字在 menu-i18n.js（按 id 对应，订单里的饮品是 itemID），没有就用英文
+function nameOf(x) {
+  if (lang === "ja") return x.nameJP || x.name;
+  if (lang === "zh") return x.name || x.nameJP;
+  const own = I18N[lang] && I18N[lang][x.itemID || x.id];
+  return own || x.nameEN || x.nameJP || x.name;
+}
 const altOf = (x) => (lang === "ja" ? x.name : x.nameJP);
 // 标配小料，例如「タピオカ入り」「含珍珠」「with Tapioca pearls」
 function includedText(item) {
   const names = (item.includedToppingIDs || []).map((id) => toppingById(id)).filter(Boolean).map(nameOf);
   if (!names.length) return null;
-  const list = names.join(lang === "en" ? ", " : "・");
-  return lang === "ja" ? list + t("included") : t("included") + (lang === "en" ? " " : "") + list;
+  const list = names.join(["en", "ru", "ko"].includes(lang) ? ", " : "・");
+  return t("included").replace("{x}", list);
 }
 
 // 安全地创建元素（菜单名称都用 textContent，不拼 HTML）
@@ -466,7 +630,7 @@ function optionText(line) {
 // 页面
 // ---------------------------------------------------------------------------
 function render() {
-  document.documentElement.lang = lang === "zh" ? "zh-CN" : lang;
+  document.documentElement.lang = LANGS.find((x) => x[0] === lang)[2];
   const app = document.getElementById("app");
   app.replaceChildren();
   app.append(renderHeader());
@@ -486,10 +650,9 @@ function renderHeader() {
       h("h1", {}, state.storeName),
       h("span", { class: "tag" }, "ORDER"),
       h("span", { class: "spacer" }),
-      h("div", { class: "lang" },
-        h("button", { class: lang === "ja" ? "on" : "", onclick: () => setLang("ja") }, "日本語"),
-        h("button", { class: lang === "zh" ? "on" : "", onclick: () => setLang("zh") }, "中文"),
-        h("button", { class: lang === "en" ? "on" : "", onclick: () => setLang("en") }, "EN"),
+      h("label", { class: "lang" }, "🌐",
+        h("select", { "aria-label": "Language", onchange: (e) => setLang(e.target.value) },
+          LANGS.map(([code, label]) => h("option", { value: code, selected: code === lang }, label))),
       ),
     ),
     h("div", { class: "sub" }, t("sub"), SEAT ? h("span", { class: "seat" }, t("seat") + " " + SEAT) : null),
@@ -504,9 +667,9 @@ function renderMenu() {
   }
   if (!state.accepting) frag.append(h("div", { class: "notice warn" }, t("closed")));
 
-  frag.append(h("div", { class: "dining" },
-    h("button", { class: state.dining === "takeOut" ? "on" : "", onclick: () => setDining("takeOut") }, t("takeOut"), h("small", {}, t("takeOutTax"))),
-    h("button", { class: state.dining === "eatIn" ? "on" : "", onclick: () => setDining("eatIn") }, t("eatIn"), h("small", {}, t("eatInTax"))),
+  frag.append(h("div", { class: "where " + state.dining },
+    h("b", {}, state.dining === "eatIn" ? t("eatIn") : t("takeOut")),
+    h("span", {}, SEAT ? t("seat") + " " + SEAT : t("takeOutHint")),
   ));
   frag.append(h("button", { class: "faqbtn", onclick: openFaq }, "？ " + t("faqBtn")));
 
@@ -541,7 +704,7 @@ function renderItem(item, cat) {
     h("div", { class: "names" },
       h("div", { class: "name" }, nameOf(item)),
       h("div", { class: "alt" }, altOf(item)),
-      h("div", { class: "price" }, prices,
+      h("div", { class: "price" }, h("span", { class: "p" }, prices),
         includedText(item) ? h("span", { class: "inc" }, includedText(item)) : null,
         item.allowedTemps.includes("hot") ? h("span", { class: "hot" }, t("hot")) : null),
     ),
@@ -750,7 +913,6 @@ function renderStatus() {
 // 动作
 // ---------------------------------------------------------------------------
 function setLang(value) { lang = value; localStorage.setItem("chali-lang", value); render(); }
-function setDining(value) { state.dining = value; render(); }
 function jumpTo(id) {
   state.activeCat = id;
   render();
@@ -789,7 +951,7 @@ async function loadMenu() {
     state.error = errorText(e.message);
   }
   state.loading = false;
-  document.title = state.storeName + " " + ({ ja: "モバイルオーダー", zh: "扫码点单", en: "Mobile Order" })[lang];
+  document.title = state.storeName + " " + t("title");
   render();
 }
 
