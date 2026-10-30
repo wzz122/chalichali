@@ -11,8 +11,9 @@
   window.CHALI_WAITER = {
     confirmed: false,
 
-    // 在 Waiter 里先点哪里：店内有桌号点那张桌子，外带点「テイクアウト」
-    table: (o) => (o.dining === "eatIn" && o.seat ? "テーブル " + o.seat : o.dining === "eatIn" ? "店内（席なし）" : "テイクアウト"),
+    // 在 Waiter 里先点哪里。店里的 Waiter 桌子就是 1、2、3……一直到六七十号按顺序排（用户 2026-10-30 说的），
+    // 二维码上的桌号直接对应 Waiter 的同号桌子；外带点「テイクアウト」（前台的单在 Waiter 里具体点哪还待确认）
+    table: (o) => (o.dining === "eatIn" && o.seat ? o.seat + " 号桌" : o.dining === "eatIn" ? "店内（席なし）" : "テイクアウト"),
 
     categories: {},   // 例：milk: "ミルクティー"
     items: {},        // 例：moxiang: "ジャスミンミルクティー"
@@ -27,7 +28,8 @@
 
     // 外卖单（接单屏「🛵 外卖单」扫进来的）：在 Waiter 里先点哪里、メモ写什么。
     // 店里外卖单在 Waiter 里另有按钮或客层的话改这里
-    deliveryTable: (d) => "テイクアウト",
+    // 店里的 Waiter 在六七十号桌后面另有「熊猫」「火箭」「Uber」三格，外卖单点对应平台那一格
+    deliveryTable: (d) => ({ panda: "最后面的「熊猫」", rocket: "最后面的「火箭」", uber: "最后面的「Uber」" })[d.platform] || "テイクアウト",
     deliveryMemo: (d, platform) => (platform ? platform.name : d.platform) + (d.ref ? " #" + d.ref : ""),
   };
 })();
