@@ -116,7 +116,16 @@
   .wl .box { flex: none; width: 30px; height: 30px; border-radius: 8px; border: 2.5px solid #B9C2BC; display: grid; place-items: center; font-size: 20px; font-weight: 900; color: transparent; margin-top: 1px; }
   .wl.done { background: var(--green-soft); border-color: transparent; }
   .wl.done .box { background: var(--green); border-color: var(--green); color: #fff; }
-  .wl.done .path, .wl.done .zh { opacity: 0.55; }
+  .wl.done .path, .wl.done .zh, .wl.done .wcat, .wl.done .wname, .wl.done .wopts { opacity: 0.55; }
+  /* 每杯：① Waiter 里的分类（大色块，旁边中文）② 日文商品名（大字）+ 中文名 ③ 依次点的选项 */
+  .wcat { display: flex; align-items: center; gap: 8px; }
+  .wcat .wcj { color: #fff; font-size: 15px; font-weight: 900; border-radius: 7px; padding: 2px 10px; }
+  .wcat .wcz { font-size: 13px; font-weight: 700; color: var(--muted); }
+  .wname { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; margin-top: 5px; }
+  .wname .wn { font-size: 22px; font-weight: 900; line-height: 1.25; }
+  .wname .wz { font-size: 14px; font-weight: 700; color: var(--muted); }
+  .wopts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 5px; margin-top: 6px; }
+  .wopts .sep { color: #B9C2BC; }
   .wl .path { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 5px; font-size: 15px; font-weight: 700; line-height: 1.35; }
   .wl .path .sep { color: #B9C2BC; font-weight: 400; }
   .wl .wc { font-size: 12px; font-weight: 800; border: 1.5px solid currentColor; border-radius: 6px; padding: 0 6px; }
@@ -798,7 +807,7 @@ function renderCard(o) {
   );
 }
 
-// 「照着点」的每一行：分类 › 商品 › 大小 › 冰 › 甜度 › 小料 ×数量（Waiter 里的叫法，见 waiter-map.js）；最后一行是メモ
+// 「照着点」的每一行：分类、商品（日文大字 + 中文）、大小 › 冰 › 甜度 › 小料 ×数量（Waiter 里的叫法，见 waiter-map.js）；最后一行是メモ
 function waiterRows(o) {
   const rows = o.lines.map((l, i) => {
     const item = MENU_BASE.items.find((x) => x.id === l.itemID);
@@ -823,16 +832,21 @@ function waiterRows(o) {
 function renderWaiterRow(o, r) {
   const on = (state.checks.get(o.id) || new Set()).has(r.key);
   const sep = () => h("span", { class: "sep" }, "›");
-  const path = r.memo
-    ? [h("span", { class: "wo" }, "メモ"), sep(), h("span", { class: "wn" }, r.memo)]
-    : [r.cat ? h("span", { class: "wc", style: "color:#" + r.cat.colorHex }, r.catName) : null, r.cat ? sep() : null,
-      h("span", { class: "wn" }, r.name),
-      r.steps.map((s) => [sep(), h("span", { class: "wo" + (s.chg ? " chg" : "") + (s.tp ? " tp" : "") }, s.t)]),
-      r.line.quantity > 1 ? h("span", { class: "qty" }, "×" + r.line.quantity) : null];
+  // メモ行照旧一行；饮品行分三层：在 Waiter 哪个分类 → 日文名（Waiter 里大多只有日文）→ 依次点的选项
+  const body = r.memo
+    ? [h("div", { class: "path" }, h("span", { class: "wo" }, "メモ"), sep(), h("span", { class: "wn" }, r.memo)), h("div", { class: "zh" }, r.zh)]
+    : [r.cat ? h("div", { class: "wcat" },
+        h("span", { class: "wcj", style: "background:#" + r.cat.colorHex }, r.catName),
+        h("span", { class: "wcz" }, r.cat.name)) : null,
+      h("div", { class: "wname" },
+        h("span", { class: "wn" }, r.name),
+        r.line.quantity > 1 ? h("span", { class: "qty" }, "×" + r.line.quantity) : null,
+        h("span", { class: "wz" }, r.zh)),
+      h("div", { class: "wopts" }, r.steps.map((s, i) => [i ? sep() : null, h("span", { class: "wo" + (s.chg ? " chg" : "") + (s.tp ? " tp" : "") }, s.t)]))];
   return h("div", {
     class: "wl" + (on ? " done" : "") + (r.memo ? " memo" : ""), role: "checkbox", "aria-checked": on ? "true" : "false", "data-row": r.key,
     onclick: () => toggleCheck(o, r.key),
-  }, h("span", { class: "box" }, "✓"), h("div", {}, h("div", { class: "path" }, path), h("div", { class: "zh" }, r.zh)));
+  }, h("span", { class: "box" }, "✓"), h("div", {}, body));
 }
 
 // 和默认不一样的选项标黄，店员一眼能看到要特别做的
