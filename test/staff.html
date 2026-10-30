@@ -167,6 +167,14 @@
   th { color: var(--muted); font-size: 12px; }
   .st { font-weight: 800; white-space: nowrap; }
   .st.cancelled { color: var(--danger); }
+  .st.received { color: var(--danger); font-weight: 900; }
+  /* 顶上「还有几单没录 Waiter」 */
+  .todo { font-size: 15px; font-weight: 900; border-radius: 999px; padding: 6px 14px; border: 0; }
+  .todo.left { background: var(--danger); color: #fff; animation: glowred 1s ease-in-out infinite alternate; }
+  .todo.clear { background: var(--green-soft); color: var(--green); }
+  @keyframes glowred { from { box-shadow: 0 0 0 0 rgba(198, 40, 40, 0.2); } to { box-shadow: 0 0 0 6px rgba(198, 40, 40, 0.35); } }
+  .card.late { border-color: var(--danger); background: #FFF6F5; }
+  .latemsg { margin-top: 6px; background: var(--danger); color: #fff; font-size: 14px; font-weight: 900; border-radius: 8px; padding: 4px 10px; }
 
   .search { width: 100%; font-size: 22px !important; padding: 13px 16px !important; }
   .hits { margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
@@ -254,7 +262,9 @@ let KEY = localStorage.getItem(LS_KEY) || "";
 const TEMP = { hot: "HOT", normalIce: "普通冰", lessIce: "少冰", roomTemp: "常温", noIce: "去冰" };
 // 顾客选的付款方式：店员收款前照着准备（刷卡、扫码都用楽天ペイ的机器）
 const PAY = { cash: "💴 现金", card: "💳 刷卡・电子钱包", qr: "📱 扫码支付" };
-const STATUS = { received: "待付款", accepted: "制作中", ready: "可取餐", completed: "已取走", cancelled: "已取消" };
+const STATUS = { received: "还没录 Waiter", accepted: "制作中", ready: "可取餐", completed: "已取走", cancelled: "已取消" };
+// 新订单放了这么久还没点「已录入」，卡片变红提醒（怕忘了录进 Waiter）
+const LATE_MIN = 3;
 // 外卖平台（颜色和收银 App 一样）
 const PLATFORM = {
   uber: { name: "Uber Eats", color: "#1A1A1A" },
@@ -730,6 +740,7 @@ function renderHeader() {
     h("h1", {}, MENU_BASE.storeName, h("small", {}, "扫码接单屏")),
     h("button", { class: "pill " + (state.accepting ? "on" : "off"), onclick: toggleAccepting },
       state.accepting ? "● 接单中" : "○ 已暂停 · 点这里开始接单"),
+    renderTodo(),
     h("span", { class: "grow" }),
     h("span", { class: "stats" }, "今日扫码 ", h("b", {}, done.length + " 单"), " · ", h("b", {}, yen(done.reduce((s, o) => s + o.total, 0))),
       " · 外卖 ", h("b", {}, todayDeliveries().filter((d) => d.status !== "cancelled").length + " 单")),
@@ -741,6 +752,16 @@ function renderHeader() {
     h("button", { class: "tool", onclick: () => window.open("poster.html", "_blank") }, "二维码"),
     h("span", { class: "conn " + (state.online ? "ok" : "bad") }, state.online ? "● 已连接" : "✕ 断开"),
   );
+}
+
+// 还有几单没录进 Waiter（第①列的扫码单 + 外卖单）；点一下跳到最早那张
+function renderTodo() {
+  const left = active("received");
+  if (!left.length) return h("span", { class: "todo clear" }, "✓ 都录进 Waiter 了");
+  return h("button", { class: "todo left", onclick: () => {
+    const first = document.querySelector(".col.received .card");
+    if (first) first.scrollIntoView({ behavior: "smooth", block: "start" });
+  } }, "⚠ 还有 " + left.length + " 单没录 Waiter");
 }
 
 function renderBoard() {
@@ -779,7 +800,9 @@ function renderCard(o) {
   const back = isD ? { accepted: "received" }[o.status] : { accepted: "received", ready: "accepted" }[o.status];
   const move = (status) => (isD ? setDeliveryStatus(o, status) : setStatus(o, status));
   const plat = isD ? PLATFORM[o.platform] || { name: o.platform, color: "#555" } : null;
-  return h("div", { class: "card" + (fresh ? " fresh" : ""), "data-q": isD ? "D" + o.ref : "Q" + o.number },
+  const waited = Math.floor((Date.now() - new Date(o.createdAt).getTime()) / 60000);
+  const late = o.status === "received" && !fresh && waited >= LATE_MIN;
+  return h("div", { class: "card" + (fresh ? " fresh" : "") + (late ? " late" : ""), "data-q": isD ? "D" + o.ref : "Q" + o.number },
     h("div", { class: "top" },
       isD ? h("span", { class: "plat", style: "background:" + plat.color }, plat.name) : null,
       h("span", { class: "qno" }, isD ? (o.ref ? "#" + o.ref : "外卖") : "Q" + o.number),
@@ -789,6 +812,7 @@ function renderCard(o) {
       o.payment && o.status === "received" ? h("span", { class: "tag pay" }, PAY[o.payment]) : null,
       h("span", { class: "time" }, ago(o.createdAt)),
     ),
+    late ? h("div", { class: "latemsg" }, "⚠ 已经 " + waited + " 分钟了，还没录进 Waiter") : null,
     entry
       ? h("div", { class: "lines" },
         h("div", { class: "wtop" }, "在 Waiter 里点", h("span", { class: "where" }, isD ? WAITER.deliveryTable(o) : WAITER.table(o)),

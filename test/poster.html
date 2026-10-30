@@ -20,6 +20,11 @@
   .pages { overflow-x: auto; padding: 0 16px 24px; }   /* 屏幕比 A4 窄时可以左右滑，不会切掉左边 */
   .page { display: flex; width: fit-content; margin: 0 auto 24px; background: #fff; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12); }
   .page.a4 .sheet + .sheet { border-left: 0.3mm dashed #C9CFCB; }   /* A4 横放两张，中间是剪开的线 */
+  /* A4 竖放四张（2×2，每张 A6 大小）：整张牌子按比例缩到 0.707，虚线是剪开的线 */
+  .page.a4x4 { display: grid; grid-template-columns: repeat(2, 105mm); grid-template-rows: repeat(2, 148.5mm); }
+  .page.a4x4 .sheet { zoom: 0.7071; }
+  .page.a4x4 .sheet:nth-child(odd) { border-right: 0.4mm dashed #C9CFCB; }
+  .page.a4x4 .sheet:nth-child(-n+2) { border-bottom: 0.4mm dashed #C9CFCB; }
 
   .sheet {
     width: 148mm; height: 210mm; background: #fff; padding: 11mm 11mm 8mm;
@@ -60,7 +65,7 @@
   </select>
   <label id="seatBox">桌号 <input id="seat" maxlength="10"></label>
   <label id="tablesBox">桌子数 <input id="tables" type="number" min="1" max="30"></label>
-  <select id="paper"><option value="a4">A4 横放，一张印两份（剪开）</option><option value="a5">A5，一张一份</option></select>
+  <select id="paper"><option value="a4x4">A4 竖放，一张印四份（剪开）</option><option value="a4">A4 横放，一张印两份（剪开）</option><option value="a5">A5，一张一份</option></select>
   <button onclick="window.print()">打印</button>
   <span>桌子上的二维码带桌号：顾客点的是「店内」，接单屏上写「店内 · 桌 1」，Waiter 里点「テーブル 1」。前台的二维码不带桌号：点的是「外带」，做好到柜台取。打印时选「实际大小 / 100%」。</span>
 </div>
@@ -81,7 +86,7 @@ const $ = (id) => document.getElementById(id);
 $("kind").value = ["set", "table", "counter", "queue"].includes(params.get("k")) ? params.get("k") : params.get("t") ? "table" : "set";
 $("seat").value = params.get("t") || "1";
 $("tables").value = params.get("n") || CONFIG.tables || 3;
-$("paper").value = params.get("paper") === "a5" ? "a5" : "a4";
+$("paper").value = ["a4", "a5"].includes(params.get("paper")) ? params.get("paper") : "a4x4";
 
 function el(tag, cls, ...children) {
   const e = document.createElement(tag);
@@ -120,7 +125,9 @@ function sheet(seat, queue) {
 
 function draw() {
   const kind = $("kind").value;
-  const a4 = $("paper").value === "a4";
+  // 纸：一页放几张、页面大小
+  const paper = { a4x4: [4, "A4 portrait"], a4: [2, "A4 landscape"], a5: [1, "A5 portrait"] }[$("paper").value];
+  const per = paper[0];
   $("seatBox").hidden = kind !== "table";
   $("tablesBox").hidden = kind !== "set";
   let sheets;
@@ -132,9 +139,9 @@ function draw() {
   } else {
     sheets = [sheet("", kind === "queue")];
   }
-  $("pagesize").textContent = "@page { size: " + (a4 ? "A4 landscape" : "A5 portrait") + "; margin: 0; }";
+  $("pagesize").textContent = "@page { size: " + paper[1] + "; margin: 0; }";
   const pages = [];
-  for (let i = 0; i < sheets.length; i += a4 ? 2 : 1) pages.push(el("div", "page" + (a4 ? " a4" : ""), ...sheets.slice(i, i + (a4 ? 2 : 1))));
+  for (let i = 0; i < sheets.length; i += per) pages.push(el("div", "page " + $("paper").value, ...sheets.slice(i, i + per)));
   $("pages").replaceChildren(...pages);
 }
 for (const id of ["kind", "seat", "tables", "paper"]) $(id).addEventListener("input", draw);

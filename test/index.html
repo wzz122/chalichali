@@ -43,8 +43,10 @@
     padding: 2px 7px; border-radius: 999px;
   }
   .brand .spacer { flex: 1; }
-  .lang { display: flex; align-items: center; gap: 4px; border: 1.5px solid var(--line); border-radius: 999px; padding: 2px 4px 2px 10px; font-size: 14px; }
-  .lang select { border: 0; background: transparent; font: inherit; font-size: 14px; font-weight: 700; color: var(--green); padding: 4px 2px; }
+  .langbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
+  .langbar .globe { font-size: 16px; }
+  .langbar button { border: 1.5px solid var(--line); background: var(--card); border-radius: 999px; padding: 5px 11px; font-size: 14px; font-weight: 700; color: var(--muted); }
+  .langbar button.on { background: var(--green); border-color: var(--green); color: #fff; }
   .where { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin: 12px 16px 0; padding: 12px 14px; border-radius: 14px; background: var(--card); border: 2px solid var(--green); }
   .where b { font-size: 17px; color: var(--green); }
   .where span { font-size: 14px; font-weight: 700; }
@@ -351,49 +353,49 @@ const T = {
       store: "Shop not found. Please scan the QR code again.",
     },
   },
-  yue: {
-    title: "掃碼落單",
-    sub: "掃碼落單 · 喺櫃位俾錢",
-    seat: "枱號",
-    takeOut: "外賣自取", takeOutHint: "整好之後喺櫃位攞",
-    eatIn: "堂食",
-    closed: "而家暫停掃碼落單，請去櫃位落單。",
-    soldOut: "賣晒",
-    hot: "可以做熱",
-    size: "大細", temp: "溫度・冰量", sweet: "甜度", toppings: "配料（可以揀幾樣）", qty: "數量",
-    add: "加入購物車",
-    viewCart: "睇購物車",
-    cart: "我嘅訂單",
-    note: "備註（唔填都得）",
-    notePh: "例如：唔要飲管",
-    order: "落單",
-    payNote: "落單之後去櫃位講單號俾錢，俾完錢就開始整。",
-    pay: "點樣俾錢（喺櫃位俾）", payPick: "請揀俾錢方式",
-    payCash: "現金", payCard: "信用卡・電子錢包", payCardSub: "拍卡都得", payQR: "掃碼支付", payQRSub: "PayPay 等",
-    payAt: "俾錢方式：",
-    remove: "刪除",
-    total: "合計（含稅）",
-    empty: "購物車係空嘅",
-    yourNo: "單號",
-    pickupNo: "取餐號",
-    received: "請去櫃位講呢個單號，然後俾錢。",
-    accepted: "收到錢喇，而家幫你整緊。",
-    ready: "整好喇！請去櫃位攞。",
-    cancelled: "唔好意思，呢張單已經取消咗。",
-    completed: "多謝幫襯！",
-    stepReceived: "落單", stepAccepted: "俾錢・整緊", stepReady: "可以攞",
-    newOrder: "再落一單",
-    reason: "原因",
-    included: "已經有{x}",
-    faqBtn: "第一次嚟？常見問題",
-    faq: ["珍珠奶茶全部已經有珍珠，唔使另外加", "淨係珍珠奶茶可以做熱", "甜度：100% 係正常，120% 甜啲，0% 唔落糖", "冰量：正常冰、少冰、走冰（奶茶仲可以常溫）", "大細：奶茶有 M 同 L，其他飲品得一種大細", "配料可以加幾樣，另外計錢", "落單之後去櫃位講單號俾錢"],
+  vi: {
+    title: "Gọi món bằng điện thoại",
+    sub: "Gọi món bằng điện thoại · Thanh toán tại quầy",
+    seat: "Bàn",
+    takeOut: "Mang đi", takeOutHint: "Khi đồ uống xong, vui lòng nhận tại quầy",
+    eatIn: "Dùng tại quán",
+    closed: "Hiện đang tạm dừng gọi món bằng điện thoại. Vui lòng gọi món tại quầy.",
+    soldOut: "Hết hàng",
+    hot: "Có nóng",
+    size: "Cỡ", temp: "Nhiệt độ / Đá", sweet: "Độ ngọt", toppings: "Topping (chọn nhiều được)", qty: "Số lượng",
+    add: "Thêm vào giỏ",
+    viewCart: "Xem giỏ hàng",
+    cart: "Đơn của bạn",
+    note: "Ghi chú (không bắt buộc)",
+    notePh: "Ví dụ: không lấy ống hút",
+    order: "Đặt món",
+    payNote: "Sau khi đặt, hãy báo số đơn tại quầy và thanh toán. Chúng tôi sẽ bắt đầu pha chế sau khi thanh toán.",
+    pay: "Cách thanh toán (tại quầy)", payPick: "Vui lòng chọn cách thanh toán",
+    payCash: "Tiền mặt", payCard: "Thẻ / Ví điện tử", payCardSub: "Hỗ trợ thanh toán chạm", payQR: "Thanh toán QR", payQRSub: "PayPay, v.v.",
+    payAt: "Thanh toán: ",
+    remove: "Xóa",
+    total: "Tổng (đã gồm thuế)",
+    empty: "Giỏ hàng trống",
+    yourNo: "Số đơn",
+    pickupNo: "Số nhận đồ",
+    received: "Hãy báo số này tại quầy và thanh toán.",
+    accepted: "Cảm ơn bạn đã thanh toán! Chúng tôi đang pha chế.",
+    ready: "Đã xong! Vui lòng nhận tại quầy.",
+    cancelled: "Xin lỗi, đơn này đã bị hủy.",
+    completed: "Cảm ơn bạn!",
+    stepReceived: "Đặt món", stepAccepted: "Thanh toán · Đang pha", stepReady: "Đã xong",
+    newOrder: "Đặt đơn mới",
+    reason: "Lý do",
+    included: "Kèm {x}",
+    faqBtn: "Lần đầu đến? Câu hỏi thường gặp",
+    faq: ["Tất cả trà sữa trân châu đều đã có trân châu (không cần thêm)", "Chỉ trà sữa trân châu mới làm nóng được", "Độ ngọt: 100% là tiêu chuẩn, 120% ngọt hơn, 0% không đường", "Đá: bình thường, ít đá hoặc không đá (trà sữa có thể để nhiệt độ thường)", "Cỡ: trà sữa có M và L, các đồ uống khác chỉ có một cỡ", "Có thể thêm nhiều topping (tính thêm tiền)", "Sau khi đặt, hãy báo số đơn tại quầy và thanh toán"],
     errors: {
-      not_accepting: "而家暫停掃碼落單，請去櫃位落單。",
-      sold_out: "有啲飲品啱啱賣晒，請睇吓購物車。",
-      busy: "而家好多單，請等陣再試。",
-      network: "網絡連唔到，請再試一次。",
-      default: "落單唔成功，請去櫃位落單。",
-      store: "搵唔到呢間舖頭，請重新掃碼。",
+      not_accepting: "Hiện đang tạm dừng gọi món bằng điện thoại. Vui lòng gọi món tại quầy.",
+      sold_out: "Có món vừa hết hàng. Vui lòng kiểm tra giỏ hàng.",
+      busy: "Hiện đang rất đông. Vui lòng thử lại sau một lát.",
+      network: "Không kết nối được. Vui lòng thử lại.",
+      default: "Không thể nhận đơn này. Vui lòng gọi món tại quầy.",
+      store: "Không tìm thấy cửa hàng. Vui lòng quét lại mã QR.",
     },
   },
   ko: {
@@ -422,7 +424,7 @@ const T = {
     yourNo: "주문 번호",
     pickupNo: "호출 번호",
     received: "카운터에서 이 번호를 말씀하시고 결제해 주세요.",
-    accepted: "결제 감사합니다. 지금 만들고 있어요.",
+    accepted: "결제가 완료되었습니다. 지금 음료를 만들고 있어요.",
     ready: "준비되었습니다! 카운터에서 받아 가세요.",
     cancelled: "죄송합니다. 이 주문은 취소되었습니다.",
     completed: "이용해 주셔서 감사합니다.",
@@ -470,13 +472,13 @@ const T = {
     accepted: "Спасибо за оплату! Мы уже готовим ваш заказ.",
     ready: "Готово! Заберите заказ на кассе.",
     cancelled: "Извините, этот заказ отменён.",
-    completed: "Спасибо, что пришли!",
-    stepReceived: "Заказ", stepAccepted: "Оплата · Готовим", stepReady: "Готово",
+    completed: "Спасибо за визит!",
+    stepReceived: "Заказ", stepAccepted: "Оплачено · Готовим", stepReady: "Готово",
     newOrder: "Новый заказ",
     reason: "Причина",
-    included: "уже внутри: {x}",
+    included: "В составе: {x}",
     faqBtn: "Впервые у нас? Частые вопросы",
-    faq: ["Во всех молочных чаях с тапиокой тапиока уже есть — добавлять не нужно", "Горячими можно сделать только молочные чаи с тапиокой", "Сладость: 100% — стандарт, 120% — слаще, 0% — без сахара", "Лёд: обычный, меньше или без льда (молочный чай можно комнатной температуры)", "Размер: молочные чаи — M и L, остальные напитки — один размер", "Можно добавить сколько угодно добавок (за доплату)", "После заказа назовите номер на кассе и оплатите"],
+    faq: ["Во всех молочных чаях с тапиокой тапиока уже есть — добавлять не нужно", "Горячими можно сделать только молочные чаи с тапиокой", "Сладость: 100% — стандарт, 120% — слаще, 0% — без сахара", "Лёд: обычный, меньше или без льда (молочный чай можно сделать комнатной температуры)", "Размер: молочные чаи — M и L, остальные напитки — один размер", "Можно добавить сколько угодно добавок (за доплату)", "После заказа назовите номер на кассе и оплатите"],
     errors: {
       not_accepting: "Сейчас заказы с телефона не принимаются. Пожалуйста, закажите на кассе.",
       sold_out: "Что-то только что закончилось. Проверьте корзину.",
@@ -492,22 +494,21 @@ const TEMP = {
   ja: { hot: "ホット", normalIce: "氷普通", lessIce: "氷少なめ", roomTemp: "常温", noIce: "氷なし" },
   zh: { hot: "HOT", normalIce: "普通冰", lessIce: "少冰", roomTemp: "常温", noIce: "去冰" },
   en: { hot: "Hot", normalIce: "Regular ice", lessIce: "Less ice", roomTemp: "Room temp", noIce: "No ice" },
-  yue: { hot: "熱", normalIce: "正常冰", lessIce: "少冰", roomTemp: "常溫", noIce: "走冰" },
+  vi: { hot: "Nóng", normalIce: "Đá bình thường", lessIce: "Ít đá", roomTemp: "Nhiệt độ thường", noIce: "Không đá" },
   ko: { hot: "HOT", normalIce: "얼음 보통", lessIce: "얼음 적게", roomTemp: "상온", noIce: "얼음 없음" },
   ru: { hot: "Горячий", normalIce: "Обычный лёд", lessIce: "Меньше льда", roomTemp: "Комнатной темп.", noIce: "Без льда" },
 };
 
 // 语言切换的顺序和显示名；htmlLang 给浏览器选字体、读屏用
 const LANGS = [
-  ["ja", "日本語", "ja"], ["zh", "简体中文", "zh-CN"], ["yue", "粵語", "zh-HK"],
-  ["ko", "한국어", "ko"], ["en", "English", "en"], ["ru", "Русский", "ru"],
+  ["ja", "日本語", "ja"], ["zh", "中文", "zh-CN"], ["ko", "한국어", "ko"],
+  ["vi", "Tiếng Việt", "vi"], ["en", "English", "en"], ["ru", "Русский", "ru"],
 ];
 const I18N = window.CHALI_MENU_I18N || {};
 
 function guessLang() {
   const l = (navigator.language || "").toLowerCase();
-  if (l.startsWith("yue") || /^zh-(hk|mo)/.test(l)) return "yue";
-  for (const code of ["zh", "ja", "ko", "ru"]) if (l.startsWith(code)) return code;
+  for (const code of ["zh", "ja", "ko", "vi", "ru"]) if (l.startsWith(code)) return code;
   return "en";
 }
 let lang = localStorage.getItem("chali-lang") || guessLang();
@@ -531,7 +532,7 @@ let state = {
 const t = (key) => T[lang][key];
 const yen = (n) => "¥" + Number(n).toLocaleString("ja-JP");
 // 顾客语言的名字；副标题用日文（外国顾客跟店员说日文名也能对上），日文顾客副标题用中文
-// 粤语、韩语、俄语的名字在 menu-i18n.js（按 id 对应，订单里的饮品是 itemID），没有就用英文
+// 越南语、韩语、俄语的名字在 menu-i18n.js（按 id 对应，订单里的饮品是 itemID），没有就用英文
 function nameOf(x) {
   if (lang === "ja") return x.nameJP || x.name;
   if (lang === "zh") return x.name || x.nameJP;
@@ -543,7 +544,7 @@ const altOf = (x) => (lang === "ja" ? x.name : x.nameJP);
 function includedText(item) {
   const names = (item.includedToppingIDs || []).map((id) => toppingById(id)).filter(Boolean).map(nameOf);
   if (!names.length) return null;
-  const list = names.join(["en", "ru", "ko"].includes(lang) ? ", " : "・");
+  const list = names.join(["en", "ru", "ko", "vi"].includes(lang) ? ", " : "・");
   return t("included").replace("{x}", list);
 }
 
@@ -649,13 +650,11 @@ function renderHeader() {
     h("div", { class: "brand" },
       h("h1", {}, state.storeName),
       h("span", { class: "tag" }, "ORDER"),
-      h("span", { class: "spacer" }),
-      h("label", { class: "lang" }, "🌐",
-        h("select", { "aria-label": "Language", onchange: (e) => setLang(e.target.value) },
-          LANGS.map(([code, label]) => h("option", { value: code, selected: code === lang }, label))),
-      ),
     ),
     h("div", { class: "sub" }, t("sub"), SEAT ? h("span", { class: "seat" }, t("seat") + " " + SEAT) : null),
+    // 6 种语言都用各自的文字写出来、一直摆在最上面：看不懂当前语言的顾客也能一眼找到自己的
+    h("nav", { class: "langbar", "aria-label": "Language" }, h("span", { class: "globe" }, "🌐"),
+      LANGS.map(([code, label]) => h("button", { class: code === lang ? "on" : "", "data-lang": code, lang: LANGS.find((x) => x[0] === code)[2], onclick: () => setLang(code) }, label))),
   );
 }
 
