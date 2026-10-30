@@ -74,14 +74,14 @@
   }
   .card.fresh { border-color: var(--orange); animation: glow 1.2s ease-in-out infinite alternate; }
   @keyframes glow { from { box-shadow: 0 0 0 0 rgba(224, 123, 57, 0.15); } to { box-shadow: 0 0 0 8px rgba(224, 123, 57, 0.28); } }
-  .top { display: flex; align-items: center; gap: 8px; }
+  .top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }   /* 窄列放不下就整块换行，不把标签挤成竖排 */
   .qno { font-size: 30px; font-weight: 900; letter-spacing: 0.5px; }
   .new { background: var(--orange); color: #fff; font-size: 12px; font-weight: 900; border-radius: 6px; padding: 1px 7px; }
-  .tag { font-size: 13px; font-weight: 800; border-radius: 6px; padding: 2px 8px; background: var(--bg); }
+  .tag { white-space: nowrap; font-size: 13px; font-weight: 800; border-radius: 6px; padding: 2px 8px; background: var(--bg); }
   .tag.in { background: var(--blue-soft); color: var(--blue); }
   .tag.out { background: var(--green-soft); color: var(--green); }
   .tag.pay { background: #EFE7FB; color: #5B3A99; }
-  .time { margin-left: auto; text-align: right; font-size: 13px; color: var(--muted); font-weight: 700; }
+  .time { white-space: nowrap; margin-left: auto; text-align: right; font-size: 13px; color: var(--muted); font-weight: 700; }
   .lines { margin-top: 6px; }
   .ln { padding: 8px 0; border-top: 1px dashed var(--line); }
   .ln .main { display: flex; align-items: baseline; gap: 8px; }
@@ -111,6 +111,10 @@
   /* 新订单「照着点」：按 Waiter 的名字和点击顺序，录一行勾一行 */
   .wtop { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 14px; font-weight: 800; }
   .wtop .where { background: #FFF3E0; color: #B36200; border: 1.5px solid #F3B05A; border-radius: 8px; padding: 2px 10px; }
+  .wtop .wstep { display: flex; align-items: center; gap: 4px; }
+  .wtop .where.num { font: inherit; font-size: 20px; font-weight: 900; padding: 0 14px; cursor: pointer; }
+  .wtop .adj { width: 36px; height: 34px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--card); font-size: 20px; font-weight: 900; }
+  .wno { white-space: nowrap; background: #FFF3E0; color: #B36200; border: 1.5px solid #F3B05A; border-radius: 8px; padding: 1px 10px; font-size: 18px; font-weight: 900; }
   .wtop .tbd { margin-left: auto; font-size: 11px; color: var(--muted); font-weight: 700; }
   .wl { display: flex; gap: 10px; align-items: flex-start; padding: 9px 8px; margin-top: 6px; border-radius: 10px; border: 1.5px solid var(--line); cursor: pointer; user-select: none; }
   .wl .box { flex: none; width: 30px; height: 30px; border-radius: 8px; border: 2.5px solid #B9C2BC; display: grid; place-items: center; font-size: 20px; font-weight: 900; color: transparent; margin-top: 1px; }
@@ -245,6 +249,7 @@ const LS_STORE = "chali-staff-store";
 const LS_CHECKS = "chali-staff-checks";
 const LS_DELIVERY = "chali-staff-delivery";   // 外卖单（只存在这台平板上，留 3 天）
 const LS_ALIASES = "chali-staff-aliases";     // 店员教过的外卖平台叫法 → 饮品 id
+const LS_WAITER_NO = "chali-staff-waiter-no"; // 店员在卡片上改过的 Waiter 号（订单 id → 号）
 
 function readHash() {
   const p = new URLSearchParams(location.hash.slice(1));
@@ -293,6 +298,7 @@ const state = {
   checks: loadChecks(),      // 订单 id → 已在 Waiter 里录好的行号（「照着点」打的勾，存在这台平板上）
   deliveries: loadList(LS_DELIVERY),   // 外卖单（扫描外卖平板上的订单放进来的）
   aliases: loadObject(LS_ALIASES),     // 外卖平台上的叫法 → 饮品 id（店员选过一次就记住）
+  waiterNo: loadObject(LS_WAITER_NO),  // 店员改过的 Waiter 号；没改过的按顺序自动排（waiterNumbers）
   draft: null,               // 正在扫描的外卖单
   toast: "",
   error: "",
@@ -497,7 +503,7 @@ function toggleCheck(o, row) {
   render();
 }
 
-async function setStatus(o, status, reason) {
+async function setStatus(o, status, reason, pickup) {
   if (state.busy.has(o.id)) return;
   const before = o.status;
   state.busy.add(o.id);
@@ -505,7 +511,7 @@ async function setStatus(o, status, reason) {
   o.status = status;
   render();
   try {
-    const r = await staffRpc("chali_staff_update_order", { p_order: o.id, p_status: status, p_reason: reason || null });
+    const r = await staffRpc("chali_staff_update_order", { p_order: o.id, p_status: status, p_reason: reason || null, p_pickup_number: pickup || null });
     state.orders.set(o.id, r);
     state.error = "";
   } catch (e) {
@@ -528,6 +534,36 @@ function cancelOrder(o) {
 function loadList(key) {
   try { const v = JSON.parse(localStorage.getItem(key) || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; }
 }
+// Waiter 号：每天从 1 号开始，今天录过的扫码单用到几号，新单接着往后排（排到 maxTable 回到 1 号）。
+// 店员 −/+ 改过的以改的为准，后面的新单跟着顺延（走进来直接点的客人也占号，平板看不到，要靠店员改）
+function wrapNo(n) {
+  const max = WAITER.maxTable || 60;
+  return ((n - 1) % max + max) % max + 1;
+}
+function waiterNumbers() {
+  let prev = Math.max(0, ...todayOrders().map((o) => o.pickupNumber || 0));
+  const out = new Map();
+  for (const o of active("received")) {
+    if (o.kind === "delivery") continue;
+    const n = state.waiterNo[o.id] || wrapNo(prev + 1);
+    out.set(o.id, n);
+    prev = n;
+  }
+  return out;
+}
+function setWaiterNo(o, n) {
+  if (!(n >= 1)) return;
+  state.waiterNo[o.id] = wrapNo(Math.round(n));
+  for (const id of Object.keys(state.waiterNo)) if ((state.orders.get(id) || {}).status !== "received") delete state.waiterNo[id];
+  try { localStorage.setItem(LS_WAITER_NO, JSON.stringify(state.waiterNo)); } catch (e) { /* 存不了就算了 */ }
+  state.fresh.delete(o.id);
+  render();
+}
+function askWaiterNo(o, cur) {
+  const v = prompt("Q" + o.number + " 在 Waiter 里用的是几号？", String(cur));
+  if (v !== null) setWaiterNo(o, parseInt(v, 10));
+}
+
 function loadObject(key) {
   try { const v = JSON.parse(localStorage.getItem(key) || "{}"); return v && typeof v === "object" ? v : {}; } catch (e) { return {}; }
 }
@@ -793,12 +829,13 @@ function renderCard(o) {
   const entry = o.status === "received" ? waiterRows(o) : null;
   const done = entry ? entry.filter((r) => (state.checks.get(o.id) || new Set()).has(r.key)).length : 0;
   const left = entry ? entry.length - done : 0;
+  const wno = !isD && o.status === "received" ? waiterNumbers().get(o.id) : null;
   let go = isD ? { received: "已录入 Waiter", accepted: "骑手已取走" }[o.status]
-    : { received: "已录入收银 · 已收款", accepted: "做好了（通知顾客）", ready: "顾客已取走" }[o.status];
+    : { received: "已录入 Waiter " + wno + " 号 · 已收款", accepted: "做好了（通知顾客）", ready: "顾客已取走" }[o.status];
   if (left) go = "Waiter 里还有 " + left + " 行没勾";
   const next = isD ? { received: "accepted", accepted: "completed" }[o.status] : { received: "accepted", accepted: "ready", ready: "completed" }[o.status];
   const back = isD ? { accepted: "received" }[o.status] : { accepted: "received", ready: "accepted" }[o.status];
-  const move = (status) => (isD ? setDeliveryStatus(o, status) : setStatus(o, status));
+  const move = (status) => (isD ? setDeliveryStatus(o, status) : setStatus(o, status, null, status === "accepted" ? wno : null));
   const plat = isD ? PLATFORM[o.platform] || { name: o.platform, color: "#555" } : null;
   const waited = Math.floor((Date.now() - new Date(o.createdAt).getTime()) / 60000);
   const late = o.status === "received" && !fresh && waited >= LATE_MIN;
@@ -806,6 +843,7 @@ function renderCard(o) {
     h("div", { class: "top" },
       isD ? h("span", { class: "plat", style: "background:" + plat.color }, plat.name) : null,
       h("span", { class: "qno" }, isD ? (o.ref ? "#" + o.ref : "外卖") : "Q" + o.number),
+      !isD && o.status !== "received" && o.pickupNumber ? h("span", { class: "wno" }, "Waiter " + o.pickupNumber + " 号") : null,
       fresh ? h("span", { class: "new" }, "NEW") : null,
       isD ? null : h("span", { class: "tag " + (o.dining === "eatIn" ? "in" : "out") }, o.dining === "eatIn" ? "店内" : "外带"),
       o.seat ? h("span", { class: "tag" }, "桌 " + o.seat) : null,
@@ -815,7 +853,11 @@ function renderCard(o) {
     late ? h("div", { class: "latemsg" }, "⚠ 已经 " + waited + " 分钟了，还没录进 Waiter") : null,
     entry
       ? h("div", { class: "lines" },
-        h("div", { class: "wtop" }, "在 Waiter 里点", h("span", { class: "where" }, isD ? WAITER.deliveryTable(o) : WAITER.table(o)),
+        h("div", { class: "wtop" }, "在 Waiter 里点", isD ? h("span", { class: "where" }, WAITER.deliveryTable(o))
+          : h("span", { class: "wstep" },
+            h("button", { class: "adj", "aria-label": "前一个号", onclick: () => setWaiterNo(o, wno - 1) }, "−"),
+            h("button", { class: "where num", onclick: () => askWaiterNo(o, wno) }, wno + " 号"),
+            h("button", { class: "adj", "aria-label": "后一个号", onclick: () => setWaiterNo(o, wno + 1) }, "+")),
           WAITER.confirmed ? null : h("span", { class: "tbd" }, "Waiter 名称待确认")),
         entry.map((r) => renderWaiterRow(o, r)))
       : h("div", { class: "lines" }, o.lines.map(renderLine)),
@@ -1103,9 +1145,10 @@ function renderHistory() {
       h("div", { class: "phead" }, h("h3", {}, "今日扫码记录（" + state.today + "）"), h("button", { class: "x", onclick: close }, "✕")),
       h("p", {}, ok.length + " 单 · " + ok.reduce((s, o) => s + o.cupCount, 0) + " 杯 · " + yen(ok.reduce((s, o) => s + o.total, 0)) + "（不含已取消）"),
       list.length ? h("table", {},
-        h("tr", {}, h("th", {}, "单号"), h("th", {}, "时间"), h("th", {}, "内容"), h("th", {}, "金额"), h("th", {}, "付款"), h("th", {}, "状态")),
+        h("tr", {}, h("th", {}, "单号"), h("th", {}, "Waiter"), h("th", {}, "时间"), h("th", {}, "内容"), h("th", {}, "金额"), h("th", {}, "付款"), h("th", {}, "状态")),
         list.map((o) => h("tr", {},
           h("td", {}, h("b", {}, "Q" + o.number)),
+          h("td", {}, o.pickupNumber ? o.pickupNumber + " 号" : "—"),
           h("td", {}, ago(o.createdAt).split(" · ")[0]),
           h("td", {}, o.lines.map((l) => l.name + " " + l.size + (l.quantity > 1 ? "×" + l.quantity : "")).join("、")),
           h("td", {}, yen(o.total)),

@@ -11,9 +11,10 @@
   window.CHALI_WAITER = {
     confirmed: false,
 
-    // 在 Waiter 里先点哪里。店里的 Waiter 桌子就是 1、2、3……一直到六七十号按顺序排（用户 2026-10-30 说的），
-    // 二维码上的桌号直接对应 Waiter 的同号桌子；外带点「テイクアウト」（前台的单在 Waiter 里具体点哪还待确认）
-    table: (o) => (o.dining === "eatIn" && o.seat ? o.seat + " 号桌" : o.dining === "eatIn" ? "店内（席なし）" : "テイクアウト"),
+    // 店里在 Waiter 里是来一单点一个号码桌：每天开店从 1 号开始按顺序往后点（用户 2026-10-30 说的）。
+    // 扫码单（桌子上的、前台的都一样）接单屏也照这个顺序自动排号，店员在卡片上 −/+ 可以改；
+    // 「已录入」时这个号存成取餐号，顾客手机上显示的就是 Waiter 小票上的号。排到 maxTable 以后回到 1 号。
+    maxTable: 60,
 
     categories: {},   // 例：milk: "ミルクティー"
     items: {},        // 例：moxiang: "ジャスミンミルクティー"
@@ -23,8 +24,8 @@
     temps: { hot: "HOT", normalIce: "氷普通", lessIce: "氷少なめ", roomTemp: "常温", noIce: "氷なし" },
     sweetness: (n) => "甘さ" + n + "%",
 
-    // 外带单把单号写进 Waiter 的メモ（贴纸上有单号，取餐时对得上）；店内单有桌号就不用写
-    memoQ: (o) => o.dining !== "eatIn" || !o.seat,
+    // 要不要把 Q 单号写进 Waiter 的メモ：Waiter 号就是顾客的取餐号，不用再写
+    memoQ: (o) => false,
 
     // 外卖单（接单屏「🛵 外卖单」扫进来的）：在 Waiter 里先点哪里、メモ写什么。
     // 店里外卖单在 Waiter 里另有按钮或客层的话改这里

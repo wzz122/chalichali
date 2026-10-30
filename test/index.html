@@ -879,7 +879,8 @@ function renderStatus() {
   const steps = ["received", "accepted", "ready"];
   const reached = o.status === "completed" ? 3 : steps.indexOf(o.status) + 1;
   const showPickup = o.pickupNumber && (o.status === "accepted" || o.status === "ready" || o.status === "completed");
-  const pickup = showPickup ? String(o.pickupNumber).padStart(3, "0") : null;
+  // 取餐号就是店员录进 Waiter 时用的号（小票上的号），不补 0
+  const pickup = showPickup ? String(o.pickupNumber) : null;
   return h("div", { class: "status" },
     h("div", { class: "card" },
       h("div", { class: "lbl" }, pickup ? t("pickupNo") : t("yourNo")),
