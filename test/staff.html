@@ -223,6 +223,23 @@
     .board { height: auto; grid-template-columns: 1fr; }
     .list { overflow: visible; }
   }
+  /* 手机：顶栏一行半、三列变成三个标签，一次看一列 */
+  .tabs { position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 8px 0; background: var(--bg); }
+  .tabs button { border: 0; border-radius: 12px; padding: 9px 4px; font-weight: 900; font-size: 15px; background: var(--card); color: var(--muted); }
+  .tabs button b { margin-left: 6px; font-size: 13px; background: var(--bg); color: var(--ink); border-radius: 999px; padding: 1px 8px; }
+  .tabs button.on { color: #fff; }
+  .tabs button.on b { background: rgba(255, 255, 255, 0.3); color: #fff; }
+  .tabs button.received.on { background: var(--orange); }
+  .tabs button.accepted.on { background: var(--green); }
+  .tabs button.ready.on { background: var(--blue); }
+  .wtop span:first-child, .wtop .where.num { white-space: nowrap; }
+  @media (max-width: 700px) {
+    header { gap: 8px; }
+    header h1 small { display: none; }
+    .board.narrow { padding: 0 10px 12px; gap: 0; }
+    .board.narrow .col { background: transparent; }
+    .board.narrow .list { padding: 0; }
+  }
 </style>
 </head>
 <body>
@@ -253,6 +270,16 @@ const LS_WAITER_NO = "chali-staff-waiter-no"; // 店员在卡片上改过的 Wai
 // 「🛵 外卖单」按钮默认藏起来（2026-10-31 用户：外卖单看着平台小票直接录 Waiter 更省事）。
 // 网址加 ?delivery=1 打开（这台平板会记住），?delivery=0 再藏起来；今天已经放进来过外卖单的话也会显示
 const LS_DELIVERY_ON = "chali-staff-delivery-on";
+// 简洁模式（2026-10-31 用户要）：只留接单要用的（接单开关、还有几单没录、三列订单），售罄、查饮品、今日记录、二维码等收起来。
+// 顶上「更多功能」/「简洁模式」切换，这台设备记住；网址加 ?simple=0 / ?simple=1 也能切换。默认简洁
+const LS_SIMPLE = "chali-staff-simple";
+{
+  const v = new URLSearchParams(location.search).get("simple");
+  if (v === "1" || v === "0") try { localStorage.setItem(LS_SIMPLE, v); } catch (e) { /* 存不了就只管这一次 */ }
+}
+function loadSimple() { try { return localStorage.getItem(LS_SIMPLE) !== "0"; } catch (e) { return true; } }
+// 手机（窄屏）上三列放不下：顶上三个标签，一次看一列
+const NARROW = window.matchMedia("(max-width: 700px)");
 {
   const v = new URLSearchParams(location.search).get("delivery");
   if (v === "1" || v === "0") try { localStorage.setItem(LS_DELIVERY_ON, v); } catch (e) { /* 存不了就只管这一次 */ }
@@ -308,6 +335,8 @@ const state = {
   deliveries: loadList(LS_DELIVERY),   // 外卖单（扫描外卖平板上的订单放进来的）
   aliases: loadObject(LS_ALIASES),     // 外卖平台上的叫法 → 饮品 id（店员选过一次就记住）
   waiterNo: loadObject(LS_WAITER_NO),  // 店员改过的 Waiter 号；没改过的按顺序自动排（waiterNumbers）
+  simple: loadSimple(),      // 简洁模式
+  tab: "received",           // 手机上正在看哪一列
   draft: null,               // 正在扫描的外卖单
   toast: "",
   error: "",
@@ -779,12 +808,30 @@ function todayDeliveries() {
 }
 const itemById = (id) => MENU_BASE.items.find((i) => i.id === id);
 
+function setSimple(on) {
+  state.simple = on;
+  try { localStorage.setItem(LS_SIMPLE, on ? "1" : "0"); } catch (e) { /* 存不了就只管这一次 */ }
+  render();
+}
+
 function renderHeader() {
   const done = todayOrders().filter((o) => o.status !== "cancelled");
+  const pill = h("button", { class: "pill " + (state.accepting ? "on" : "off"), onclick: toggleAccepting },
+    state.accepting ? "● 接单中" : "○ 已暂停 · 点这里开始接单");
+  const conn = h("span", { class: "conn " + (state.online ? "ok" : "bad") }, state.online ? "● 已连接" : "✕ 断开");
+  if (state.simple) {
+    return h("header", { class: "simple" },
+      h("h1", {}, MENU_BASE.storeName, h("small", {}, "扫码接单屏")),
+      pill,
+      renderTodo(),
+      h("span", { class: "grow" }),
+      conn,
+      h("button", { class: "tool mode", onclick: () => setSimple(false) }, "⚙ 更多功能"),
+    );
+  }
   return h("header", {},
     h("h1", {}, MENU_BASE.storeName, h("small", {}, "扫码接单屏")),
-    h("button", { class: "pill " + (state.accepting ? "on" : "off"), onclick: toggleAccepting },
-      state.accepting ? "● 接单中" : "○ 已暂停 · 点这里开始接单"),
+    pill,
     renderTodo(),
     h("span", { class: "grow" }),
     h("span", { class: "stats" }, "今日扫码 ", h("b", {}, done.length + " 单"), " · ", h("b", {}, yen(done.reduce((s, o) => s + o.total, 0))),
@@ -795,7 +842,8 @@ function renderHeader() {
     h("button", { class: "tool", onclick: openLookup }, "🔍 查饮品"),
     h("button", { class: "tool", onclick: () => { state.sheet = "history"; render(); } }, "今日记录"),
     h("button", { class: "tool", onclick: () => window.open("poster.html", "_blank") }, "二维码"),
-    h("span", { class: "conn " + (state.online ? "ok" : "bad") }, state.online ? "● 已连接" : "✕ 断开"),
+    conn,
+    h("button", { class: "tool mode", onclick: () => setSimple(true) }, "简洁模式"),
   );
 }
 
@@ -806,6 +854,7 @@ function renderTodo() {
   const left = active("received");
   if (!left.length) return h("span", { class: "todo clear" }, "✓ 都录进 Waiter 了");
   return h("button", { class: "todo left", onclick: () => {
+    if (NARROW.matches && state.tab !== "received") { state.tab = "received"; render(); }
     const first = document.querySelector(".col.received .card");
     if (first) first.scrollIntoView({ behavior: "smooth", block: "start" });
   } }, "⚠ 还有 " + left.length + " 单没录 Waiter");
@@ -817,13 +866,19 @@ function renderBoard() {
     ["accepted", "② 制作中", "做好后点「做好了」，顾客手机会提示"],
     ["ready", "③ 可取餐", "顾客取走后点一下"],
   ];
-  return h("main", { class: "board" }, cols.map(([status, title, sub]) => {
-    const list = active(status);
-    return h("section", { class: "col " + status },
-      h("h2", {}, title, h("small", {}, sub), h("span", { class: "n" }, String(list.length))),
-      h("div", { class: "list" }, list.length ? list.map(renderCard) : h("div", { class: "empty" }, state.loaded ? "暂时没有" : "加载中…")),
-    );
-  }));
+  const narrow = NARROW.matches;
+  const shown = narrow ? cols.filter(([status]) => status === state.tab) : cols;
+  return h("main", { class: "board" + (narrow ? " narrow" : "") },
+    narrow ? h("nav", { class: "tabs" }, cols.map(([status, title]) =>
+      h("button", { class: status + (state.tab === status ? " on" : ""), "data-tab": status, onclick: () => { state.tab = status; render(); window.scrollTo(0, 0); } },
+        title.slice(2), h("b", {}, String(active(status).length))))) : null,
+    shown.map(([status, title, sub]) => {
+      const list = active(status);
+      return h("section", { class: "col " + status },
+        narrow ? null : h("h2", {}, title, state.simple ? null : h("small", {}, sub), h("span", { class: "n" }, String(list.length))),
+        h("div", { class: "list" }, list.length ? list.map(renderCard) : h("div", { class: "empty" }, state.loaded ? "暂时没有" : "加载中…")),
+      );
+    }));
 }
 
 function ago(iso) {
@@ -869,7 +924,7 @@ function renderCard(o) {
             h("button", { class: "adj", "aria-label": "前一个号", onclick: () => setWaiterNo(o, wno - 1) }, "−"),
             h("button", { class: "where num", onclick: () => askWaiterNo(o, wno) }, wno + " 号"),
             h("button", { class: "adj", "aria-label": "后一个号", onclick: () => setWaiterNo(o, wno + 1) }, "+")),
-          WAITER.confirmed ? null : h("span", { class: "tbd" }, "Waiter 名称待确认")),
+          WAITER.confirmed || state.simple ? null : h("span", { class: "tbd" }, "Waiter 名称待确认")),
         entry.map((r) => renderWaiterRow(o, r)))
       : h("div", { class: "lines" }, o.lines.map(renderLine)),
     o.note && !entry ? h("div", { class: "note" }, "备注：" + o.note) : null,
