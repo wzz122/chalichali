@@ -52,6 +52,12 @@
   .where span { font-size: 14px; font-weight: 700; }
   .where.takeOut { border-color: var(--orange); }
   .where.takeOut b { color: var(--orange); }
+  .where .change { margin-left: auto; border: 1.5px solid var(--line); background: var(--card); border-radius: 999px; padding: 3px 12px; font-size: 13px; font-weight: 700; color: var(--muted); }
+  /* 一开始选堂食 / 打包 */
+  .choose { margin: 18px 16px 0; display: grid; gap: 12px; }
+  .choose h2 { margin: 0 0 4px; font-size: 20px; text-align: center; }
+  .choose button { border: 2.5px solid var(--green); background: var(--card); color: var(--green); border-radius: 18px; padding: 22px 12px; font-size: 24px; font-weight: 900; }
+  .choose button.takeOut { border-color: var(--orange); color: var(--orange); }
   .sub { margin-top: 4px; font-size: 13px; color: var(--muted); }
   .seat { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 6px; background: var(--green-soft); color: var(--green); font-weight: 700; }
 
@@ -223,6 +229,7 @@ const T = {
     title: "モバイルオーダー",
     seat: "テーブル",
     takeOut: "お持ち帰り", takeOutHint: "できあがったらカウンターでお受け取りください",
+    chooseTitle: "店内で召し上がりますか？お持ち帰りですか？", change: "変更",
     eatIn: "店内でお召し上がり",
     closed: "ただいまモバイルオーダーを停止しています。レジでご注文ください。",
     soldOut: "売切",
@@ -267,8 +274,9 @@ const T = {
     sub: "扫码点单 · 到柜台付款",
     title: "扫码点单",
     seat: "桌号",
-    takeOut: "外带", takeOutHint: "做好后到柜台取",
-    eatIn: "店内用",
+    takeOut: "打包", takeOutHint: "做好后到柜台取",
+    chooseTitle: "堂食还是打包？", change: "更改",
+    eatIn: "堂食",
     closed: "现在暂停扫码点单，请到柜台点单。",
     soldOut: "售罄",
     hot: "可做热",
@@ -313,6 +321,7 @@ const T = {
     title: "Mobile Order",
     seat: "Table",
     takeOut: "Take out", takeOutHint: "Pick it up at the counter when it's ready",
+    chooseTitle: "Eat in or take out?", change: "Change",
     eatIn: "Eat in",
     closed: "Mobile ordering is paused right now. Please order at the counter.",
     soldOut: "Sold out",
@@ -358,6 +367,7 @@ const T = {
     sub: "Gọi món bằng điện thoại · Thanh toán tại quầy",
     seat: "Bàn",
     takeOut: "Mang đi", takeOutHint: "Khi đồ uống xong, vui lòng nhận tại quầy",
+    chooseTitle: "Dùng tại quán hay mang đi?", change: "Đổi",
     eatIn: "Dùng tại quán",
     closed: "Hiện đang tạm dừng gọi món bằng điện thoại. Vui lòng gọi món tại quầy.",
     soldOut: "Hết hàng",
@@ -403,6 +413,7 @@ const T = {
     sub: "สั่งผ่านมือถือ · ชำระเงินที่เคาน์เตอร์",
     seat: "โต๊ะ",
     takeOut: "กลับบ้าน", takeOutHint: "เมื่อเครื่องดื่มเสร็จ กรุณารับที่เคาน์เตอร์",
+    chooseTitle: "ทานที่ร้านหรือกลับบ้าน?", change: "เปลี่ยน",
     eatIn: "ทานที่ร้าน",
     closed: "ขณะนี้ปิดรับออร์เดอร์ทางมือถือชั่วคราว กรุณาสั่งที่เคาน์เตอร์",
     soldOut: "หมด",
@@ -448,6 +459,7 @@ const T = {
     sub: "Pesan lewat HP · Bayar di kasir",
     seat: "Meja",
     takeOut: "Bawa pulang", takeOutHint: "Ambil di konter saat minuman sudah siap",
+    chooseTitle: "Minum di tempat atau bawa pulang?", change: "Ubah",
     eatIn: "Minum di tempat",
     closed: "Pemesanan lewat HP sedang ditutup sementara. Silakan pesan di kasir.",
     soldOut: "Habis",
@@ -493,6 +505,7 @@ const T = {
     sub: "모바일 주문 · 결제는 카운터에서",
     seat: "테이블",
     takeOut: "포장", takeOutHint: "음료가 준비되면 카운터에서 받아 가세요",
+    chooseTitle: "매장에서 드시나요, 포장하시나요?", change: "변경",
     eatIn: "매장 이용",
     closed: "지금은 모바일 주문을 받지 않습니다. 카운터에서 주문해 주세요.",
     soldOut: "품절",
@@ -538,6 +551,7 @@ const T = {
     sub: "Заказ с телефона · Оплата на кассе",
     seat: "Стол",
     takeOut: "С собой", takeOutHint: "Когда заказ будет готов, заберите его на кассе",
+    chooseTitle: "Здесь или с собой?", change: "Изменить",
     eatIn: "В заведении",
     closed: "Сейчас заказы с телефона не принимаются. Пожалуйста, закажите на кассе.",
     soldOut: "Нет в наличии",
@@ -613,7 +627,8 @@ let state = {
   accepting: false,
   menu: null,
   today: "",
-  dining: SEAT ? "eatIn" : "takeOut",   // 由二维码决定，顾客不用选
+  // 店里只贴一个码（2026-10-31）：打开先选堂食还是打包；旧的带桌号的码（?t=）直接算店内
+  dining: SEAT ? "eatIn" : null,
   cart: [],
   payment: null,           // 到柜台怎么付：cash / card / qr（下一单默认还是这个）
   note: "",
@@ -760,9 +775,20 @@ function renderMenu() {
   }
   if (!state.accepting) frag.append(h("div", { class: "notice warn" }, t("closed")));
 
+  // 还没选堂食 / 打包：先选，选完再显示菜单
+  if (!state.dining) {
+    frag.append(h("div", { class: "choose" },
+      h("h2", {}, t("chooseTitle")),
+      h("button", { class: "eatIn", "data-dining": "eatIn", onclick: () => setDining("eatIn") }, "🪑 ", t("eatIn")),
+      h("button", { class: "takeOut", "data-dining": "takeOut", onclick: () => setDining("takeOut") }, "🥤 ", t("takeOut")),
+    ));
+    frag.append(h("button", { class: "faqbtn", onclick: openFaq }, "？ " + t("faqBtn")));
+    return frag;
+  }
   frag.append(h("div", { class: "where " + state.dining },
     h("b", {}, state.dining === "eatIn" ? t("eatIn") : t("takeOut")),
     h("span", {}, SEAT ? t("seat") + " " + SEAT : t("takeOutHint")),
+    SEAT ? null : h("button", { class: "change", onclick: () => setDining(null) }, t("change")),
   ));
   frag.append(h("button", { class: "faqbtn", onclick: openFaq }, "？ " + t("faqBtn")));
 
@@ -1007,6 +1033,7 @@ function renderStatus() {
 // 动作
 // ---------------------------------------------------------------------------
 function setLang(value) { lang = value; localStorage.setItem("chali-lang", value); render(); }
+function setDining(value) { state.dining = value; render(); window.scrollTo(0, 0); }
 function jumpTo(id) {
   state.activeCat = id;
   render();

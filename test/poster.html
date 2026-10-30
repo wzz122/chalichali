@@ -58,7 +58,8 @@
 <body>
 <div class="tools">
   <select id="kind">
-    <option value="set">一整套：桌子 + 前台</option>
+    <option value="single">一个码（堂食、打包都扫这个）</option>
+    <option value="set">一整套：桌子 + 前台（每张桌子一个码）</option>
     <option value="table">一张桌子</option>
     <option value="counter">前台（外带，做好来取）</option>
     <option value="queue">排队用（外带）</option>
@@ -67,7 +68,7 @@
   <label id="tablesBox">桌子数 <input id="tables" type="number" min="1" max="30"></label>
   <select id="paper"><option value="a4x4">A4 竖放，一张印四份（剪开）</option><option value="a4">A4 横放，一张印两份（剪开）</option><option value="a5">A5，一张一份</option></select>
   <button onclick="window.print()">打印</button>
-  <span>桌子上的二维码带桌号：顾客点的是「店内」，接单屏上写「店内 · 桌 1」，Waiter 里点「テーブル 1」。前台的二维码不带桌号：点的是「外带」，做好到柜台取。打印时选「实际大小 / 100%」。</span>
+  <span>「一个码」：全店贴同一个码，顾客打开后先选堂食还是打包（默认，一张 A4 印 4 张同样的）。「一整套」：每张桌子一个带桌号的码 + 前台的码。桌子上的二维码带桌号：顾客点的是「店内」，接单屏上写「店内 · 桌 1」，Waiter 里点「テーブル 1」。前台的二维码不带桌号：点的是「外带」，做好到柜台取。打印时选「实际大小 / 100%」。</span>
 </div>
 <div class="pages" id="pages"></div>
 
@@ -83,7 +84,7 @@ const BASE = CONFIG.orderUrl || new URL("./", location.href).href;
 const TEST = /\/test\/$/.test(new URL(BASE).pathname);
 const $ = (id) => document.getElementById(id);
 
-$("kind").value = ["set", "table", "counter", "queue"].includes(params.get("k")) ? params.get("k") : params.get("t") ? "table" : "set";
+$("kind").value = ["single", "set", "table", "counter", "queue"].includes(params.get("k")) ? params.get("k") : params.get("t") ? "table" : "single";
 $("seat").value = params.get("t") || "1";
 $("tables").value = params.get("n") || CONFIG.tables || 3;
 $("paper").value = ["a4", "a5"].includes(params.get("paper")) ? params.get("paper") : "a4x4";
@@ -95,8 +96,9 @@ function el(tag, cls, ...children) {
   return e;
 }
 
-// 一张海报：seat 有值 = 桌子（店内），没有 = 前台（外带）；queue = 排队的地方
-function sheet(seat, queue) {
+// 一张海报：seat 有值 = 桌子（店内），没有 = 前台（外带）；queue = 排队的地方；
+// single = 全店一个码（不带桌号，顾客打开后自己选堂食还是打包）
+function sheet(seat, queue, single) {
   const url = new URL(BASE);
   if (seat) url.searchParams.set("t", seat);
   const qr = qrcode(0, "M");
@@ -106,12 +108,15 @@ function sheet(seat, queue) {
   qrBox.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
 
   // 牌子上只写日文、简体中文、英文（顾客页面里另有 6 种语言可选）
-  const where = seat
+  const where = single
+    ? el("div", "where", el("b", null, "店内・お持ち帰り OK"),
+        el("small", null, "堂食、打包都扫这个 · Eat in or take out"))
+    : seat
     ? el("div", "where", el("b", null, "テーブル " + seat + " · 桌 " + seat + " · Table " + seat),
         el("small", null, "店内 · Eat in"))
     : el("div", "where", el("b", null, "お持ち帰り · 外带 · Take out"),
         el("small", null, "できあがったらカウンターへ · 做好后到柜台取 · Pick up at the counter"));
-  return el("div", "sheet " + (seat ? "eatIn" : "takeOut"),
+  return el("div", "sheet " + (seat || single ? "eatIn" : "takeOut"),
     el("div", "brand", "茶里茶里"),
     el("div", "title", "モバイルオーダー", el("small", null, "扫码点单 · Mobile Order")),
     where,
@@ -131,7 +136,9 @@ function draw() {
   $("seatBox").hidden = kind !== "table";
   $("tablesBox").hidden = kind !== "set";
   let sheets;
-  if (kind === "set") {
+  if (kind === "single") {
+    sheets = Array.from({ length: per }, () => sheet("", false, true));   // 一页印满同一个码
+  } else if (kind === "set") {
     const n = Math.max(1, Math.min(30, parseInt($("tables").value, 10) || 3));
     sheets = Array.from({ length: n }, (_, i) => sheet(String(i + 1))).concat(sheet(""));
   } else if (kind === "table") {
