@@ -199,8 +199,9 @@
   .secondary { border: 1.5px solid var(--line); background: var(--card); border-radius: 14px; padding: 12px 18px; font-weight: 700; }
   .loading { text-align: center; color: var(--muted); padding: 60px 16px; }
   .hidden { display: none !important; }
-  .status .gopay { font-size: 26px; font-weight: 900; color: var(--orange); margin: 6px 0 2px; line-height: 1.3; }
-  .status .qno { margin-top: 6px; }
+  .status .gopay { font-size: 24px; font-weight: 900; color: var(--orange); margin: 2px 0 10px; line-height: 1.3; }
+  /* 付款前的单号：到柜台报这个号，红色大字 */
+  .status .qno { font-size: 72px; font-weight: 900; color: var(--danger); line-height: 1.05; letter-spacing: 2px; }
 </style>
 </head>
 <body>
@@ -1013,13 +1014,13 @@ function renderStatus() {
   const pickup = showPickup ? String(o.pickupNumber) : null;
   return h("div", { class: "status" },
     h("div", { class: "card" },
-      // 顾客只要记取餐号（= 店员录进 Waiter 的号）；付款前不显示大号码，只说「到柜台出示这个画面付款」，Q 单号小字给店员对单
-      pickup ? h("div", { class: "lbl" }, t("pickupNo")) : null,
+      // 付款前：「到柜台付款」+ 红色大字单号（到柜台报这个号）；付款后只显示取餐号（= 店员录进 Waiter 的号）
+      o.status === "received" ? h("div", { class: "gopay" }, t("goPay")) : null,
+      pickup ? h("div", { class: "lbl" }, t("pickupNo")) : h("div", { class: "lbl" }, t("yourNo")),
       pickup ? h("div", { class: "num" + (o.status === "ready" ? " ready" : "") }, pickup)
-        : o.status === "received" ? h("div", { class: "gopay" }, t("goPay"))
+        : o.status === "received" ? h("div", { class: "qno" }, "Q" + o.number)
         : h("div", { class: "num" }, "Q" + o.number),
       h("div", { class: "msg" }, t(o.status) || ""),
-      o.status === "received" ? h("div", { class: "lbl qno" }, t("yourNo") + " Q" + o.number) : null,
       o.status === "received" && o.payment ? h("div", { class: "lbl", "data-paid-by": o.payment }, t("payAt") + t({ cash: "payCash", card: "payCard", qr: "payQR" }[o.payment])) : null,
       o.status === "cancelled" && o.cancelReason ? h("div", { class: "lbl" }, t("reason") + "：" + o.cancelReason) : null,
       o.status !== "cancelled" ? h("div", { class: "steps" },

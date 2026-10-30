@@ -123,12 +123,17 @@
   .wl.done .path, .wl.done .zh, .wl.done .wcat, .wl.done .wname, .wl.done .wopts { opacity: 0.55; }
   /* 每杯：① Waiter 里的分类（大色块，旁边中文）② 日文商品名（大字）+ 中文名 ③ 依次点的选项 */
   .wcat { display: flex; align-items: center; gap: 8px; }
-  .wcat .wcj { color: #fff; font-size: 15px; font-weight: 900; border-radius: 7px; padding: 2px 10px; }
+  .wcat .wcj { color: #fff; font-size: 17px; font-weight: 900; border-radius: 7px; padding: 2px 10px; }
   .wcat .wcz { font-size: 13px; font-weight: 700; color: var(--muted); }
   .wname { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; margin-top: 5px; }
-  .wname .wn { font-size: 22px; font-weight: 900; line-height: 1.25; }
+  .wname .wn { font-size: 25px; font-weight: 900; line-height: 1.25; }
+  .wname .wsz { font-size: 22px; font-weight: 900; color: var(--green); }
   .wname .wz { font-size: 14px; font-weight: 700; color: var(--muted); }
-  .wopts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 5px; margin-top: 6px; }
+  .wja { font-size: 14px; font-weight: 700; color: var(--muted); margin-top: 1px; }
+  .wopts { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 5px; margin-top: 7px; }
+  .wopts .wo { display: inline-flex; flex-direction: column; align-items: flex-start; padding: 3px 9px; line-height: 1.2; color: var(--ink); }
+  .wopts .wo b { font-size: 18px; font-weight: 900; }
+  .wopts .wo small { font-size: 11px; font-weight: 700; opacity: 0.75; }
   .wopts .sep { color: #B9C2BC; }
   .wl .path { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 5px; font-size: 15px; font-weight: 700; line-height: 1.35; }
   .wl .path .sep { color: #B9C2BC; font-weight: 400; }
@@ -965,15 +970,16 @@ function waiterRows(o) {
     const item = MENU_BASE.items.find((x) => x.id === l.itemID);
     const cat = item && MENU_BASE.categories.find((c) => c.id === item.categoryID);
     const steps = [];
-    if (!item || Object.keys(item.prices).length > 1) steps.push({ t: WAITER.sizes[l.size] || l.size });
-    if (!item || item.allowedTemps.length > 1) steps.push({ t: WAITER.temps[l.temp] || l.temp, chg: l.temp !== "normalIce" });
-    steps.push({ t: WAITER.sweetness(l.sweetness), chg: l.sweetness !== 100 });
-    for (const tp of l.toppings) steps.push({ t: "+" + (WAITER.toppings[tp.id] || tp.nameJP), tp: true });
+    // 每一步：zh 中文（大字，店员一眼看懂）、t Waiter 里的日文（小字，照着在 Waiter 里找）
+    if (!item || Object.keys(item.prices).length > 1) steps.push({ zh: l.size, t: WAITER.sizes[l.size] || l.size });
+    if (!item || item.allowedTemps.length > 1) steps.push({ zh: TEMP[l.temp] || l.temp, t: WAITER.temps[l.temp] || l.temp, chg: l.temp !== "normalIce" });
+    steps.push({ zh: "甜度 " + l.sweetness + "%", t: WAITER.sweetness(l.sweetness), chg: l.sweetness !== 100 });
+    for (const tp of l.toppings) steps.push({ zh: "+" + tp.name, t: "+" + (WAITER.toppings[tp.id] || tp.nameJP), tp: true });
     return {
       key: "l" + i, line: l, cat, steps,
       name: WAITER.items[l.itemID] || l.nameJP,
       catName: cat ? WAITER.categories[cat.id] || cat.nameJP : "",
-      zh: l.name + " " + l.size + (o.kind === "delivery" ? "" : " · " + yen(l.unitPrice * l.quantity)),
+      price: o.kind === "delivery" ? "" : yen(l.unitPrice * l.quantity),
     };
   });
   const tag = o.kind === "delivery" ? WAITER.deliveryMemo(o, PLATFORM[o.platform]) : WAITER.memoQ(o) ? "Q" + o.number : "";
@@ -984,17 +990,21 @@ function waiterRows(o) {
 function renderWaiterRow(o, r) {
   const on = (state.checks.get(o.id) || new Set()).has(r.key);
   const sep = () => h("span", { class: "sep" }, "›");
-  // メモ行照旧一行；饮品行分三层：在 Waiter 哪个分类 → 日文名（Waiter 里大多只有日文）→ 依次点的选项
+  // メモ行照旧一行；饮品行分三层：分类 → 饮品名 → 依次点的选项。
+  // 中文大字（店员一眼看懂、不容易录错），下面一行小字是 Waiter 里的日文（照着在 Waiter 里找）
   const body = r.memo
     ? [h("div", { class: "path" }, h("span", { class: "wo" }, "メモ"), sep(), h("span", { class: "wn" }, r.memo)), h("div", { class: "zh" }, r.zh)]
     : [r.cat ? h("div", { class: "wcat" },
-        h("span", { class: "wcj", style: "background:#" + r.cat.colorHex }, r.catName),
-        h("span", { class: "wcz" }, r.cat.name)) : null,
+        h("span", { class: "wcj", style: "background:#" + r.cat.colorHex }, r.cat.name),
+        h("span", { class: "wcz" }, r.catName)) : null,
       h("div", { class: "wname" },
-        h("span", { class: "wn" }, r.name),
+        h("span", { class: "wn" }, r.line.name),
+        h("span", { class: "wsz" }, r.line.size),
         r.line.quantity > 1 ? h("span", { class: "qty" }, "×" + r.line.quantity) : null,
-        h("span", { class: "wz" }, r.zh)),
-      h("div", { class: "wopts" }, r.steps.map((s, i) => [i ? sep() : null, h("span", { class: "wo" + (s.chg ? " chg" : "") + (s.tp ? " tp" : "") }, s.t)]))];
+        r.price ? h("span", { class: "wz" }, r.price) : null),
+      h("div", { class: "wja" }, r.name),
+      h("div", { class: "wopts" }, r.steps.map((s, i) => [i ? sep() : null,
+        h("span", { class: "wo" + (s.chg ? " chg" : "") + (s.tp ? " tp" : "") }, h("b", {}, s.zh), s.t !== s.zh ? h("small", {}, s.t) : null)]))];
   return h("div", {
     class: "wl" + (on ? " done" : "") + (r.memo ? " memo" : ""), role: "checkbox", "aria-checked": on ? "true" : "false", "data-row": r.key,
     onclick: () => toggleCheck(o, r.key),
