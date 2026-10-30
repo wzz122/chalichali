@@ -172,6 +172,7 @@
   .st { font-weight: 800; white-space: nowrap; }
   .st.cancelled { color: var(--danger); }
   .st.received { color: var(--danger); font-weight: 900; }
+  .del { border: 1.5px solid #F2B8B5; background: #FFF6F5; color: var(--danger); border-radius: 8px; padding: 3px 10px; font-size: 13px; font-weight: 800; white-space: nowrap; }
   /* 顶上「还有几单没录 Waiter」 */
   .todo { font-size: 15px; font-weight: 900; border-radius: 999px; padding: 6px 14px; border: 0; }
   .todo.left { background: var(--danger); color: #fff; animation: glowred 1s ease-in-out infinite alternate; }
@@ -555,6 +556,25 @@ async function setStatus(o, status, reason, pickup) {
   } catch (e) {
     o.status = before;
     state.error = e.message === "network" ? "网络不通，刚才的操作没有成功，请再点一次。" : "操作失败：" + e.message;
+  }
+  state.busy.delete(o.id);
+  render();
+}
+
+// 今日记录里删单（测试单、点错的单）：从服务器真的删掉，今日统计不再算；顾客手机上这单会消失
+async function deleteOrder(o) {
+  if (!confirm("删除 Q" + o.number + "（" + yen(o.total) + "）？\n删掉后今日记录和统计都不再算，顾客手机上这单也会消失，不能恢复。")) return;
+  state.busy.add(o.id);
+  render();
+  try {
+    await staffRpc("chali_staff_delete_order", { p_order: o.id });
+    state.orders.delete(o.id);
+    state.checks.delete(o.id);
+    delete state.waiterNo[o.id];
+    saveChecks();
+    state.error = "";
+  } catch (e) {
+    state.error = e.message === "network" ? "网络不通，没有删掉，请再点一次。" : "删除失败：" + e.message;
   }
   state.busy.delete(o.id);
   render();
@@ -1211,7 +1231,7 @@ function renderHistory() {
       h("div", { class: "phead" }, h("h3", {}, "今日扫码记录（" + state.today + "）"), h("button", { class: "x", onclick: close }, "✕")),
       h("p", {}, ok.length + " 单 · " + ok.reduce((s, o) => s + o.cupCount, 0) + " 杯 · " + yen(ok.reduce((s, o) => s + o.total, 0)) + "（不含已取消）"),
       list.length ? h("table", {},
-        h("tr", {}, h("th", {}, "单号"), h("th", {}, "Waiter"), h("th", {}, "时间"), h("th", {}, "内容"), h("th", {}, "金额"), h("th", {}, "付款"), h("th", {}, "状态")),
+        h("tr", {}, h("th", {}, "单号"), h("th", {}, "Waiter"), h("th", {}, "时间"), h("th", {}, "内容"), h("th", {}, "金额"), h("th", {}, "付款"), h("th", {}, "状态"), h("th", {}, "")),
         list.map((o) => h("tr", {},
           h("td", {}, h("b", {}, "Q" + o.number)),
           h("td", {}, o.pickupNumber ? o.pickupNumber + " 号" : "—"),
@@ -1220,6 +1240,7 @@ function renderHistory() {
           h("td", {}, yen(o.total)),
           h("td", {}, o.payment ? PAY[o.payment].split(" ")[1].split("・")[0] : "—"),
           h("td", { class: "st " + o.status }, STATUS[o.status] + (o.cancelReason ? "（" + o.cancelReason + "）" : "")),
+          h("td", {}, h("button", { class: "del", disabled: state.busy.has(o.id), onclick: () => deleteOrder(o) }, "删除")),
         )),
       ) : h("div", { class: "empty" }, "今天还没有扫码单"),
       renderDeliveryHistory(),
