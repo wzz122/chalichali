@@ -398,6 +398,96 @@ const T = {
       store: "Không tìm thấy cửa hàng. Vui lòng quét lại mã QR.",
     },
   },
+  th: {
+    title: "สั่งผ่านมือถือ",
+    sub: "สั่งผ่านมือถือ · ชำระเงินที่เคาน์เตอร์",
+    seat: "โต๊ะ",
+    takeOut: "กลับบ้าน", takeOutHint: "เมื่อเครื่องดื่มเสร็จ กรุณารับที่เคาน์เตอร์",
+    eatIn: "ทานที่ร้าน",
+    closed: "ขณะนี้ปิดรับออร์เดอร์ทางมือถือชั่วคราว กรุณาสั่งที่เคาน์เตอร์",
+    soldOut: "หมด",
+    hot: "สั่งร้อนได้",
+    size: "ขนาด", temp: "อุณหภูมิ / น้ำแข็ง", sweet: "ความหวาน", toppings: "ท็อปปิ้ง (เลือกได้หลายอย่าง)", qty: "จำนวน",
+    add: "ใส่ตะกร้า",
+    viewCart: "ดูตะกร้า",
+    cart: "รายการที่สั่ง",
+    note: "หมายเหตุ (ไม่บังคับ)",
+    notePh: "เช่น ไม่รับหลอด",
+    order: "สั่งเลย",
+    payNote: "สั่งแล้วกรุณาแจ้งหมายเลขออร์เดอร์ที่เคาน์เตอร์และชำระเงิน เราจะเริ่มทำหลังชำระเงิน",
+    pay: "วิธีชำระเงิน (ชำระที่เคาน์เตอร์)", payPick: "กรุณาเลือกวิธีชำระเงิน",
+    payCash: "เงินสด", payCard: "บัตร / e-money", payCardSub: "แตะจ่ายได้", payQR: "จ่ายผ่าน QR", payQRSub: "PayPay ฯลฯ",
+    payAt: "ชำระเงิน: ",
+    remove: "ลบ",
+    total: "รวม (รวมภาษีแล้ว)",
+    empty: "ตะกร้าว่างเปล่า",
+    yourNo: "หมายเลขออร์เดอร์",
+    pickupNo: "หมายเลขรับเครื่องดื่ม",
+    received: "กรุณาแจ้งหมายเลขนี้ที่เคาน์เตอร์และชำระเงิน",
+    accepted: "ขอบคุณที่ชำระเงิน เรากำลังทำเครื่องดื่มให้",
+    ready: "เสร็จแล้ว! กรุณารับที่เคาน์เตอร์",
+    cancelled: "ขออภัย ออร์เดอร์นี้ถูกยกเลิกแล้ว",
+    completed: "ขอบคุณที่มาใช้บริการ",
+    stepReceived: "สั่งแล้ว", stepAccepted: "ชำระแล้ว · กำลังทำ", stepReady: "เสร็จแล้ว",
+    newOrder: "สั่งใหม่",
+    reason: "เหตุผล",
+    included: "มี{x}อยู่แล้ว",
+    faqBtn: "มาครั้งแรก? คำถามที่พบบ่อย",
+    faq: ["ชานมไข่มุกทุกแก้วมีไข่มุกอยู่แล้ว (ไม่ต้องเพิ่ม)", "สั่งร้อนได้เฉพาะชานมไข่มุกเท่านั้น", "ความหวาน: 100% คือปกติ, 120% หวานขึ้น, 0% ไม่ใส่น้ำตาล", "น้ำแข็ง: ปกติ, น้อย หรือไม่ใส่ (ชานมเลือกแบบอุณหภูมิห้องได้)", "ขนาด: ชานมมี M และ L เครื่องดื่มอื่นมีขนาดเดียว", "เพิ่มท็อปปิ้งได้หลายอย่าง (คิดเงินเพิ่ม)", "สั่งแล้วกรุณาแจ้งหมายเลขที่เคาน์เตอร์และชำระเงิน"],
+    errors: {
+      not_accepting: "ขณะนี้ปิดรับออร์เดอร์ทางมือถือชั่วคราว กรุณาสั่งที่เคาน์เตอร์",
+      sold_out: "มีเมนูที่เพิ่งหมด กรุณาตรวจสอบตะกร้า",
+      busy: "ตอนนี้ออร์เดอร์เยอะ กรุณาลองใหม่อีกสักครู่",
+      network: "เชื่อมต่อไม่ได้ กรุณาลองอีกครั้ง",
+      default: "ไม่สามารถรับออร์เดอร์นี้ได้ กรุณาสั่งที่เคาน์เตอร์",
+      store: "ไม่พบร้าน กรุณาสแกน QR อีกครั้ง",
+    },
+  },
+  id: {
+    title: "Pesan lewat HP",
+    sub: "Pesan lewat HP · Bayar di kasir",
+    seat: "Meja",
+    takeOut: "Bawa pulang", takeOutHint: "Ambil di konter saat minuman sudah siap",
+    eatIn: "Minum di tempat",
+    closed: "Pemesanan lewat HP sedang ditutup sementara. Silakan pesan di kasir.",
+    soldOut: "Habis",
+    hot: "Bisa panas",
+    size: "Ukuran", temp: "Suhu / Es", sweet: "Tingkat manis", toppings: "Topping (boleh lebih dari satu)", qty: "Jumlah",
+    add: "Masukkan ke keranjang",
+    viewCart: "Lihat keranjang",
+    cart: "Pesanan Anda",
+    note: "Catatan (opsional)",
+    notePh: "Contoh: tanpa sedotan",
+    order: "Pesan",
+    payNote: "Setelah memesan, sebutkan nomor pesanan di kasir lalu bayar. Minuman dibuat setelah pembayaran.",
+    pay: "Cara bayar (di kasir)", payPick: "Pilih cara bayar",
+    payCash: "Tunai", payCard: "Kartu / uang elektronik", payCardSub: "Bisa tap", payQR: "Bayar QR", payQRSub: "PayPay, dll.",
+    payAt: "Pembayaran: ",
+    remove: "Hapus",
+    total: "Total (termasuk pajak)",
+    empty: "Keranjang kosong",
+    yourNo: "Nomor pesanan",
+    pickupNo: "Nomor pengambilan",
+    received: "Sebutkan nomor ini di kasir lalu bayar.",
+    accepted: "Terima kasih, pembayaran diterima. Minuman Anda sedang dibuat.",
+    ready: "Sudah siap! Silakan ambil di konter.",
+    cancelled: "Maaf, pesanan ini dibatalkan.",
+    completed: "Terima kasih atas kunjungan Anda!",
+    stepReceived: "Dipesan", stepAccepted: "Dibayar · Sedang dibuat", stepReady: "Siap",
+    newOrder: "Pesan lagi",
+    reason: "Alasan",
+    included: "Sudah termasuk {x}",
+    faqBtn: "Pertama kali? Pertanyaan umum",
+    faq: ["Semua milk tea boba sudah berisi boba (tidak perlu ditambah)", "Hanya milk tea boba yang bisa dibuat panas", "Tingkat manis: 100% standar, 120% lebih manis, 0% tanpa gula", "Es: normal, sedikit, atau tanpa es (milk tea juga bisa suhu ruang)", "Ukuran: milk tea ada M dan L, minuman lain hanya satu ukuran", "Boleh tambah beberapa topping (ada biaya tambahan)", "Setelah memesan, sebutkan nomor pesanan di kasir lalu bayar"],
+    errors: {
+      not_accepting: "Pemesanan lewat HP sedang ditutup sementara. Silakan pesan di kasir.",
+      sold_out: "Ada menu yang baru saja habis. Silakan cek keranjang.",
+      busy: "Sedang ramai. Silakan coba beberapa saat lagi.",
+      network: "Koneksi gagal. Silakan coba lagi.",
+      default: "Pesanan tidak dapat diterima. Silakan pesan di kasir.",
+      store: "Toko tidak ditemukan. Silakan pindai ulang kode QR.",
+    },
+  },
   ko: {
     title: "모바일 주문",
     sub: "모바일 주문 · 결제는 카운터에서",
@@ -496,19 +586,23 @@ const TEMP = {
   en: { hot: "Hot", normalIce: "Regular ice", lessIce: "Less ice", roomTemp: "Room temp", noIce: "No ice" },
   vi: { hot: "Nóng", normalIce: "Đá bình thường", lessIce: "Ít đá", roomTemp: "Nhiệt độ thường", noIce: "Không đá" },
   ko: { hot: "HOT", normalIce: "얼음 보통", lessIce: "얼음 적게", roomTemp: "상온", noIce: "얼음 없음" },
+  th: { hot: "ร้อน", normalIce: "น้ำแข็งปกติ", lessIce: "น้ำแข็งน้อย", roomTemp: "อุณหภูมิห้อง", noIce: "ไม่ใส่น้ำแข็ง" },
+  id: { hot: "Panas", normalIce: "Es normal", lessIce: "Sedikit es", roomTemp: "Suhu ruang", noIce: "Tanpa es" },
   ru: { hot: "Горячий", normalIce: "Обычный лёд", lessIce: "Меньше льда", roomTemp: "Комнатной темп.", noIce: "Без льда" },
 };
 
 // 语言切换的顺序和显示名；htmlLang 给浏览器选字体、读屏用
 const LANGS = [
   ["ja", "日本語", "ja"], ["zh", "中文", "zh-CN"], ["ko", "한국어", "ko"],
-  ["vi", "Tiếng Việt", "vi"], ["en", "English", "en"], ["ru", "Русский", "ru"],
+  ["vi", "Tiếng Việt", "vi"], ["th", "ไทย", "th"], ["id", "Indonesia", "id"],
+  ["en", "English", "en"], ["ru", "Русский", "ru"],
 ];
 const I18N = window.CHALI_MENU_I18N || {};
 
 function guessLang() {
   const l = (navigator.language || "").toLowerCase();
-  for (const code of ["zh", "ja", "ko", "vi", "ru"]) if (l.startsWith(code)) return code;
+  if (l.startsWith("in")) return "id";   // 旧的安卓把印尼语报成 in-ID
+  for (const code of ["zh", "ja", "ko", "vi", "th", "id", "ru"]) if (l.startsWith(code)) return code;
   return "en";
 }
 let lang = localStorage.getItem("chali-lang") || guessLang();
@@ -532,7 +626,7 @@ let state = {
 const t = (key) => T[lang][key];
 const yen = (n) => "¥" + Number(n).toLocaleString("ja-JP");
 // 顾客语言的名字；副标题用日文（外国顾客跟店员说日文名也能对上），日文顾客副标题用中文
-// 越南语、韩语、俄语的名字在 menu-i18n.js（按 id 对应，订单里的饮品是 itemID），没有就用英文
+// 越南语、韩语、俄语、泰语、印尼语的名字在 menu-i18n.js（按 id 对应，订单里的饮品是 itemID），没有就用英文
 function nameOf(x) {
   if (lang === "ja") return x.nameJP || x.name;
   if (lang === "zh") return x.name || x.nameJP;
@@ -544,7 +638,7 @@ const altOf = (x) => (lang === "ja" ? x.name : x.nameJP);
 function includedText(item) {
   const names = (item.includedToppingIDs || []).map((id) => toppingById(id)).filter(Boolean).map(nameOf);
   if (!names.length) return null;
-  const list = names.join(["en", "ru", "ko", "vi"].includes(lang) ? ", " : "・");
+  const list = names.join(["en", "ru", "ko", "vi", "th", "id"].includes(lang) ? ", " : "・");
   return t("included").replace("{x}", list);
 }
 
