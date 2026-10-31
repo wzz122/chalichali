@@ -6,6 +6,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2E7D4F">
 <meta name="robots" content="noindex">
+<!-- 加到主屏幕（iPhone / iPad 的 Safari「分享 → 添加到主屏幕」）：图标、名字，打开时全屏像 App -->
+<link rel="apple-touch-icon" href="staff-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="茶里接单">
 <title>茶里茶里 扫码接单屏</title>
 <style>
   :root {
@@ -154,6 +159,12 @@
   .mute { position: fixed; left: 12px; bottom: 12px; z-index: 45; border: 0; border-radius: 999px; background: #FFF1C2; color: #7A5B00; padding: 10px 18px; font-weight: 800; font-size: 15px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15); }
   .banner { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 40; background: var(--danger); color: #fff; padding: 10px 14px; border-radius: 12px; font-weight: 800; text-align: center; }
 
+  .a2hs { position: fixed; right: 12px; bottom: 12px; z-index: 45; border: 0; border-radius: 999px; background: var(--green); color: #fff; padding: 10px 18px; font-weight: 800; font-size: 15px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15); }
+  @media (max-width: 700px) { .a2hs { bottom: 62px; } }
+  .a2hs-steps ol { margin: 14px 0 8px; padding-left: 26px; font-size: 18px; line-height: 1.6; }
+  .a2hs-steps ol b { color: var(--green); }
+  .a2hs-steps .warn { color: var(--danger); font-size: 14px; }
+  .a2hs-steps .minor { width: 100%; margin-top: 10px; padding: 13px; font-size: 16px; }
   .overlay { position: fixed; inset: 0; z-index: 60; background: rgba(20, 30, 24, 0.72); display: grid; place-items: center; padding: 20px; }
   .panel { background: var(--card); border-radius: 22px; padding: 26px; width: min(560px, 100%); max-height: 88vh; overflow-y: auto; }
   .panel.wide { width: min(980px, 100%); }
@@ -251,16 +262,16 @@
 <body>
 <div id="app"></div>
 
-<script src="config.js?v=20261031023316"></script>
-<script src="menu.js?v=20261031023316"></script>
-<script src="waiter-map.js?v=20261031023316"></script>
-<script src="delivery-reader.js?v=20261031023316"></script>
+<script src="config.js?v=20261101001823"></script>
+<script src="menu.js?v=20261101001823"></script>
+<script src="waiter-map.js?v=20261101001823"></script>
+<script src="delivery-reader.js?v=20261101001823"></script>
 <script>
 "use strict";
 
 // 网页更新后马上用新版：GitHub Pages 让手机缓存 10 分钟（微信更久）。发布时 publish-pages.sh 把 BUILD 换成发布时间、
 // 写 version.json，并给 .js 加上 ?v=；打开时发现服务器上有新版就换成带 ?v= 的网址重新打开（新网址不吃缓存）
-const BUILD = "20261031023316";
+const BUILD = "20261101001823";
 if (BUILD !== "dev") {
   fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then((r) => r.json()).then((j) => {
     const url = new URL(location.href);
@@ -315,6 +326,16 @@ function readHash() {
   return true;
 }
 readHash();
+
+// 加到主屏幕（2026-11-01 老板先用自己的 iPad / iPhone 在网页上试用，不装 App）：iPhone、iPad 的 Safari 里右下角有「放到主屏幕」，
+// 点了把 #k=门店密钥 暂时放回地址栏、显示「分享 → 添加到主屏幕」的步骤，这样主屏幕图标自己带着密钥
+// （从主屏幕打开的网页和 Safari 不共用存储，不带密钥就要重新输）。关掉步骤就从地址栏去掉密钥。
+// 从主屏幕打开的、「茶里接单」App 里（WKWebView 的 UA 没有 Safari/）、微信 LINE 等 App 里打开的不显示
+const LS_A2HS = "chali-staff-a2hs-off";
+const UA = navigator.userAgent;
+const IOS = /iPhone|iPad|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
+const STANDALONE = navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+const A2HS = IOS && /Safari\//.test(UA) && !/CriOS|FxiOS|EdgiOS|OPiOS|MicroMessenger|Line\/|FBAN|Instagram/.test(UA) && !STANDALONE;
 
 let STORE = localStorage.getItem(LS_STORE) || CONFIG.defaultStore || "chalichali-01";
 let KEY = localStorage.getItem(LS_KEY) || "";
@@ -775,6 +796,38 @@ async function connect(store, key) {
   render();
 }
 
+function a2hsShown() {
+  if (!A2HS || !KEY) return false;
+  try { return localStorage.getItem(LS_A2HS) !== "1"; } catch (e) { return true; }
+}
+function openA2hs() {
+  history.replaceState(null, "", location.pathname + location.search + "#k=" + encodeURIComponent(KEY) + "&s=" + encodeURIComponent(STORE));
+  state.sheet = "a2hs";
+  render();
+}
+function closeA2hs(done) {
+  history.replaceState(null, "", location.pathname + location.search);
+  if (done) try { localStorage.setItem(LS_A2HS, "1"); } catch (e) { /* 存不了下次再提示 */ }
+  state.sheet = null;
+  render();
+}
+function renderA2hs() {
+  const iPhone = /iPhone|iPod/.test(UA);
+  return h("div", { class: "overlay", onclick: (e) => { if (e.target === e.currentTarget) closeA2hs(false); } },
+    h("div", { class: "panel a2hs-steps" },
+      h("h3", {}, "放到主屏幕，像 App 一样打开"),
+      h("ol", {},
+        h("li", {}, "点 Safari 的 ", h("b", {}, "分享"), " 按钮（方框加向上箭头，", iPhone ? "在屏幕下面" : "在右上角", "）"),
+        h("li", {}, "往下找，点 ", h("b", {}, "添加到主屏幕")),
+        h("li", {}, "点右上角 ", h("b", {}, "添加")),
+      ),
+      h("p", {}, "以后点主屏幕上的「茶里接单」图标就能打开，不用再扫码，也不用输密钥。"),
+      h("p", { class: "warn" }, "现在地址栏里带着门店密钥，这个网址别分享给别人。"),
+      h("button", { class: "big", onclick: () => closeA2hs(true) }, "放好了"),
+      h("button", { class: "minor", onclick: () => closeA2hs(false) }, "以后再说"),
+    ));
+}
+
 function logout(message) {
   localStorage.removeItem(LS_KEY);
   KEY = "";
@@ -810,10 +863,12 @@ function draw(app) {
   if (state.phase === "setup") { app.append(renderSetup()); return; }
   app.append(renderHeader(), renderBoard());
   if (!soundOn) app.append(h("button", { class: "mute", onclick: unlockAudio }, "🔇 提示音还没打开 · 点一下屏幕任意地方"));
+  if (!state.sheet && a2hsShown()) app.append(h("button", { class: "a2hs", onclick: openA2hs }, "📲 放到主屏幕"));
   if (state.sheet === "soldout") app.append(renderSoldOut());
   if (state.sheet === "history") app.append(renderHistory());
   if (state.sheet === "lookup") app.append(renderLookup());
   if (state.sheet === "delivery") app.append(renderDelivery());
+  if (state.sheet === "a2hs") app.append(renderA2hs());
   if (state.toast) app.append(h("div", { class: "toast", role: "status" }, state.toast));
   if (state.error) app.append(h("div", { class: "banner", onclick: () => { state.error = ""; render(); } }, state.error));
   else if (!state.online) app.append(h("div", { class: "banner" }, "网络断开，正在重连…（顾客这时下的单，连上后会出现）"));
