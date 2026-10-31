@@ -267,17 +267,17 @@
 <body>
 <div id="app"></div>
 
-<script src="config.js?v=20261101011330"></script>
-<script src="menu.js?v=20261101011330"></script>
-<script src="waiter-map.js?v=20261101011330"></script>
-<script src="delivery-reader.js?v=20261101011330"></script>
-<script src="vendor/qrcode.js?v=20261101011330"></script>
+<script src="config.js?v=20261101012534"></script>
+<script src="menu.js?v=20261101012534"></script>
+<script src="waiter-map.js?v=20261101012534"></script>
+<script src="delivery-reader.js?v=20261101012534"></script>
+<script src="vendor/qrcode.js?v=20261101012534"></script>
 <script>
 "use strict";
 
 // 网页更新后马上用新版：GitHub Pages 让手机缓存 10 分钟（微信更久）。发布时 publish-pages.sh 把 BUILD 换成发布时间、
 // 写 version.json，并给 .js 加上 ?v=；打开时发现服务器上有新版就换成带 ?v= 的网址重新打开（新网址不吃缓存）
-const BUILD = "20261101011330";
+const BUILD = "20261101012534";
 if (BUILD !== "dev") {
   fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then((r) => r.json()).then((j) => {
     const url = new URL(location.href);
@@ -346,6 +346,8 @@ const STANDALONE = navigator.standalone === true || window.matchMedia("(display-
 const A2HS = IOS && /Safari\//.test(UA) && !/CriOS|FxiOS|EdgiOS|OPiOS|MicroMessenger|Line\/|FBAN|Instagram/.test(UA) && !STANDALONE;
 const INVITE = new URLSearchParams(location.search).get("i") || "";   // 扫「加设备」码打开的
 const LS_INVITE_SEEN = "chali-staff-invite-seen";                     // 这个码在这里提示过放主屏幕（主屏幕图标在 Safari 里打开时就直接登录）
+// 微信、LINE 等 App 里打开的链接（「发链接」发过去的）：iPhone 上先提示用 Safari 打开（才能放主屏幕）。LINE 看到 openExternalBrowser=1 会自己用 Safari 打开
+const IN_APP = /MicroMessenger|Line\/|FBAN|FBAV|Instagram/.test(UA);
 
 let STORE = localStorage.getItem(LS_STORE) || CONFIG.defaultStore || "chalichali-01";
 let KEY = localStorage.getItem(LS_KEY) || "";
@@ -816,9 +818,9 @@ function deviceLabel() {
 function startInvite() {
   let seen = "";
   try { seen = localStorage.getItem(LS_INVITE_SEEN) || ""; } catch (e) { /* 读不了当没提示过 */ }
-  if (A2HS && seen !== INVITE) {
+  if ((A2HS || (IOS && IN_APP)) && seen !== INVITE) {
     try { localStorage.setItem(LS_INVITE_SEEN, INVITE); } catch (e) { /* 存不了就算了 */ }
-    state.joinStep = "a2hs";
+    state.joinStep = A2HS ? "a2hs" : "safari";
     render();
     return;
   }
@@ -848,6 +850,27 @@ async function openInvite() {
   try { state.invite = await staffRpc("chali_staff_invite", {}); } catch (e) { state.inviteError = "连不上服务器，请检查网络再试。"; }
   if (state.sheet === "invite") render();
 }
+function inviteUntil(inv) {
+  const d = new Date(inv.expiresAt);
+  return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+}
+// 人不在旁边：把加设备的链接用 LINE / 微信发过去（iPhone 上弹系统分享；不行就复制）
+async function shareInvite(inv) {
+  const url = location.origin + location.pathname + "?i=" + inv.code + "&openExternalBrowser=1";
+  const text = "茶里接单：用 iPhone / iPad 打开这个链接，照提示放到主屏幕就能用（" + inviteUntil(inv) + " 前有效）";
+  if (navigator.share) {
+    try { await navigator.share({ title: "茶里接单", text, url }); return; } catch (e) { if (e.name === "AbortError") return; }
+  }
+  try {
+    await navigator.clipboard.writeText(text + "\n" + url);
+    state.toast = "链接已复制，去 LINE / 微信里粘贴发给对方";
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { state.toast = ""; render(); }, 6000);
+    render();
+  } catch (e) {
+    prompt("复制这个链接发给对方：", url);
+  }
+}
 async function logoutOthers() {
   if (!confirm("让其他扫码登录的手机、平板都退出？\n它们要重新扫「加设备」的码才能再用。这台、收银 iPad 和「茶里接单」App 不受影响。")) return;
   try {
@@ -872,13 +895,13 @@ function renderInvite() {
     qr = h("div", { class: "invqr" });
     qr.innerHTML = q.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
   }
-  const until = inv ? new Date(inv.expiresAt) : null;
   return h("div", { class: "overlay", onclick: (e) => { if (e.target === e.currentTarget) close(); } },
     h("div", { class: "panel" },
       h("div", { class: "phead" }, h("h3", {}, "📱 加一台手机 / 平板"), h("button", { class: "x", onclick: close }, "✕")),
       h("p", {}, "用要加的手机或平板的", h("b", {}, "相机"), "扫这个码，照提示放到主屏幕，就登录好了，不用密码。"),
       qr || (state.inviteError ? null : h("div", { class: "empty" }, "生成中…")),
-      until ? h("p", { class: "hint" }, "这个码 " + pad2(until.getHours()) + ":" + pad2(until.getMinutes()) + " 前有效（30 分钟），过了就没用了，被人拍到也不怕。") : null,
+      inv ? h("p", { class: "hint" }, "这个码 " + inviteUntil(inv) + " 前有效（30 分钟），过了就没用了，被人拍到也不怕。") : null,
+      inv ? h("button", { class: "big", onclick: () => shareInvite(inv) }, "📤 人不在旁边：发链接（LINE / 微信）") : null,
       state.inviteError ? h("div", { class: "err" }, state.inviteError) : null,
       inv ? h("p", {}, "现在有 " + inv.devices + " 台手机 / 平板是扫码登录的。") : null,
       h("button", { class: "minor", style: "width:100%;margin-top:8px", onclick: logoutOthers }, "让扫码登录的其他设备都退出（打工的走了用）"),
@@ -976,6 +999,18 @@ function renderSetup() {
       ),
       h("p", {}, "放好以后点主屏幕上的「茶里接单」，就自动登录好了，以后也直接点它。"),
       h("p", { class: "hint" }, "扫码后 30 分钟内打开都行。"),
+      h("button", { class: "minor", onclick: join }, "不放了，直接在这里用"),
+    ));
+  }
+  if (state.joinStep === "safari") {
+    return h("div", { class: "overlay" }, h("div", { class: "panel a2hs-steps" },
+      h("h3", {}, "请用 Safari 打开"),
+      h("p", {}, "现在是在微信 / LINE 里打开的，放不到主屏幕。"),
+      h("ol", {},
+        h("li", {}, "点右上角 ", h("b", {}, "···")),
+        h("li", {}, "点 ", h("b", {}, "在 Safari 中打开"), "（或「用默认浏览器打开」）"),
+        h("li", {}, "在 Safari 里照提示放到主屏幕"),
+      ),
       h("button", { class: "minor", onclick: join }, "不放了，直接在这里用"),
     ));
   }
