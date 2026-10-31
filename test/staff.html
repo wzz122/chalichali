@@ -267,17 +267,17 @@
 <body>
 <div id="app"></div>
 
-<script src="config.js?v=20261101012534"></script>
-<script src="menu.js?v=20261101012534"></script>
-<script src="waiter-map.js?v=20261101012534"></script>
-<script src="delivery-reader.js?v=20261101012534"></script>
-<script src="vendor/qrcode.js?v=20261101012534"></script>
+<script src="config.js?v=20261101015334"></script>
+<script src="menu.js?v=20261101015334"></script>
+<script src="waiter-map.js?v=20261101015334"></script>
+<script src="delivery-reader.js?v=20261101015334"></script>
+<script src="vendor/qrcode.js?v=20261101015334"></script>
 <script>
 "use strict";
 
 // 网页更新后马上用新版：GitHub Pages 让手机缓存 10 分钟（微信更久）。发布时 publish-pages.sh 把 BUILD 换成发布时间、
 // 写 version.json，并给 .js 加上 ?v=；打开时发现服务器上有新版就换成带 ?v= 的网址重新打开（新网址不吃缓存）
-const BUILD = "20261101012534";
+const BUILD = "20261101015334";
 if (BUILD !== "dev") {
   fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then((r) => r.json()).then((j) => {
     const url = new URL(location.href);
@@ -290,9 +290,9 @@ if (BUILD !== "dev") {
 
 // ---------------------------------------------------------------------------
 // 设置
-//   加设备（2026-11-01 起，不用密码）：已经登录的设备点「⚙ 更多功能 → 📱 加设备」出一个码（staff.html?i=码，30 分钟内有效），
-//   新手机、平板用相机扫一下，服务器给这台设备一个令牌，存在 LS_KEY（和门店密钥放一起，后面都一样用）。
-//   打工的走了：「📱 加设备」里点「让扫码登录的其他设备都退出」。
+//   店员码（2026-11-01 起，不用密码）：已经登录的设备点「⚙ 更多功能 → 📱 加设备」显示店员码（staff.html?i=码，长期有效，可以截图、发链接），
+//   新手机、平板用相机扫一下马上登录：服务器给这台设备一个令牌，存在 LS_KEY（和门店密钥放一起，后面都一样用）。
+//   打工的走了：「📱 加设备」里点「让其他设备都退出，换新码」，旧码作废。
 //   收银 iPad、「茶里接单」App 还是用门店密钥：staff.html#k=门店密钥（可加 &s=门店ID），地址栏里的密钥会马上去掉；登录页「店长：用门店密钥登录」也行
 // ---------------------------------------------------------------------------
 const CONFIG = window.CHALI_CONFIG || {};
@@ -337,17 +337,15 @@ function readHash() {
 readHash();
 
 // 加到主屏幕（2026-11-01 用网页试用，不装 App）：iPhone、iPad 的 Safari 里右下角有「放到主屏幕」，点了显示「分享 → 添加到主屏幕」的步骤。
-// 从主屏幕打开的网页和 Safari 不共用存储：扫了加设备的码先放主屏幕，再从主屏幕打开时用同一个码登录（码在网址的 ?i= 里，主屏幕图标带着）。
-// 从主屏幕打开的、「茶里接单」App 里（WKWebView 的 UA 没有 Safari/）、微信 LINE 等 App 里打开的不显示
+// 从主屏幕打开的网页和浏览器不共用存储：网址里带着店员码（?i=，点「放到主屏幕」时没有就补上），主屏幕图标第一次打开自己登录。
+// iPhone / iPad 的 Safari、Chrome 里显示；从主屏幕打开的、「茶里接单」App 里（WKWebView 的 UA 没有 Safari/）、微信 LINE 等 App 里不显示
 const LS_A2HS = "chali-staff-a2hs-off";
 const UA = navigator.userAgent;
 const IOS = /iPhone|iPad|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
 const STANDALONE = navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
-const A2HS = IOS && /Safari\//.test(UA) && !/CriOS|FxiOS|EdgiOS|OPiOS|MicroMessenger|Line\/|FBAN|Instagram/.test(UA) && !STANDALONE;
-const INVITE = new URLSearchParams(location.search).get("i") || "";   // 扫「加设备」码打开的
-const LS_INVITE_SEEN = "chali-staff-invite-seen";                     // 这个码在这里提示过放主屏幕（主屏幕图标在 Safari 里打开时就直接登录）
-// 微信、LINE 等 App 里打开的链接（「发链接」发过去的）：iPhone 上先提示用 Safari 打开（才能放主屏幕）。LINE 看到 openExternalBrowser=1 会自己用 Safari 打开
-const IN_APP = /MicroMessenger|Line\/|FBAN|FBAV|Instagram/.test(UA);
+const A2HS = IOS && /Safari\//.test(UA) && !/FxiOS|EdgiOS|OPiOS|MicroMessenger|Line\/|FBAN|Instagram/.test(UA) && !STANDALONE;
+const CHROME = /CriOS/.test(UA);
+const INVITE = new URLSearchParams(location.search).get("i") || "";   // 扫店员码打开的（LINE 发的链接带 openExternalBrowser=1，会用 Safari 打开）
 
 let STORE = localStorage.getItem(LS_STORE) || CONFIG.defaultStore || "chalichali-01";
 let KEY = localStorage.getItem(LS_KEY) || "";
@@ -370,7 +368,7 @@ const FULL_MS = 30000;
 
 const state = {
   phase: KEY ? "board" : "setup",   // setup：还没登录（扫加设备的码）  board：接单
-  joinStep: "",                      // 扫了加设备的码："a2hs" 先提示放主屏幕 / "joining" 登录中
+  joinStep: "",                      // 扫了店员码："joining" 登录中
   setupError: "",
   orders: new Map(),
   since: null,
@@ -495,7 +493,7 @@ async function poll() {
     state.online = true;
     if (added.length) announce(added);
   } catch (e) {
-    if (e.message === "unauthorized") return logout("这台已经退出登录（可能有人点了「让其他设备都退出」）。请重新扫「加设备」的码。");
+    if (e.message === "unauthorized") return logout("这台已经退出登录（有人点了「让其他设备都退出」）。请扫新的店员码。");
     state.online = false;
   }
   // 没有变化就不重画（不然列表滚动位置和新单闪烁会被打断）
@@ -813,19 +811,7 @@ function deviceLabel() {
   return (IOS ? (/iPhone|iPod/.test(UA) ? "iPhone" : "iPad") : /Android/.test(UA) ? "Android" : "网页") + (STANDALONE ? " 主屏幕" : "");
 }
 
-// 扫了「加设备」码：iPhone / iPad 的 Safari 里先提示放到主屏幕（从主屏幕打开时用同一个码登录，只登录一次）；
-// 从主屏幕打开、安卓、App 里，或者这个码在这里已经提示过（主屏幕图标在 Safari 里打开）就直接登录
-function startInvite() {
-  let seen = "";
-  try { seen = localStorage.getItem(LS_INVITE_SEEN) || ""; } catch (e) { /* 读不了当没提示过 */ }
-  if ((A2HS || (IOS && IN_APP)) && seen !== INVITE) {
-    try { localStorage.setItem(LS_INVITE_SEEN, INVITE); } catch (e) { /* 存不了就算了 */ }
-    state.joinStep = A2HS ? "a2hs" : "safari";
-    render();
-    return;
-  }
-  join();
-}
+// 扫了店员码：马上登录（不管哪个浏览器、App）
 async function join() {
   state.joinStep = "joining";
   state.setupError = "";
@@ -833,7 +819,7 @@ async function join() {
   try {
     const r = await rpc("chali_staff_join", { p_store: STORE, p_code: INVITE, p_label: deviceLabel() });
     if (r && r.ok) { state.joinStep = ""; return connect(STORE, r.key); }
-    state.setupError = "这个码过期了（加设备的码 30 分钟内有效）。请让已经登录的人再点一次「📱 加设备」，重新扫。";
+    state.setupError = "这个店员码已经换了新的。请让已经登录的人点「⚙ 更多功能」→「📱 加设备」，扫新的码。";
   } catch (e) {
     state.setupError = "连不上服务器，请检查网络再扫一次。";
   }
@@ -841,7 +827,8 @@ async function join() {
   render();
 }
 
-// 「📱 加设备」：出一个码给新手机、平板扫；打工的走了在这里让其他设备都退出
+// 「📱 加设备」：显示店员码给新手机、平板扫（长期有效）；打工的走了在这里让其他设备都退出、换新码
+const joinUrl = (code) => location.origin + location.pathname + "?i=" + code;
 async function openInvite() {
   state.sheet = "invite";
   state.invite = null;
@@ -850,39 +837,36 @@ async function openInvite() {
   try { state.invite = await staffRpc("chali_staff_invite", {}); } catch (e) { state.inviteError = "连不上服务器，请检查网络再试。"; }
   if (state.sheet === "invite") render();
 }
-function inviteUntil(inv) {
-  const d = new Date(inv.expiresAt);
-  return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+function showToast(text) {
+  state.toast = text;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { state.toast = ""; render(); }, 6000);
+  render();
 }
-// 人不在旁边：把加设备的链接用 LINE / 微信发过去（iPhone 上弹系统分享；不行就复制）
+// 人不在旁边：把店员码的链接用 LINE / 微信发过去（iPhone 上弹系统分享；不行就复制）
 async function shareInvite(inv) {
-  const url = location.origin + location.pathname + "?i=" + inv.code + "&openExternalBrowser=1";
-  const text = "茶里接单：用 iPhone / iPad 打开这个链接，照提示放到主屏幕就能用（" + inviteUntil(inv) + " 前有效）";
+  const url = joinUrl(inv.code) + "&openExternalBrowser=1";
+  const text = "茶里接单：点这个链接就能用，打开后可以放到主屏幕";
   if (navigator.share) {
     try { await navigator.share({ title: "茶里接单", text, url }); return; } catch (e) { if (e.name === "AbortError") return; }
   }
   try {
     await navigator.clipboard.writeText(text + "\n" + url);
-    state.toast = "链接已复制，去 LINE / 微信里粘贴发给对方";
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { state.toast = ""; render(); }, 6000);
-    render();
+    showToast("链接已复制，去 LINE / 微信里粘贴发给对方");
   } catch (e) {
     prompt("复制这个链接发给对方：", url);
   }
 }
 async function logoutOthers() {
-  if (!confirm("让其他扫码登录的手机、平板都退出？\n它们要重新扫「加设备」的码才能再用。这台、收银 iPad 和「茶里接单」App 不受影响。")) return;
+  if (!confirm("让其他扫码登录的手机、平板都退出，并换一个新店员码？\n旧码马上作废，大家要扫新码才能再用。这台、收银 iPad 和「茶里接单」App 不受影响。")) return;
   try {
     const r = await staffRpc("chali_staff_logout_others", {});
-    state.sheet = null;
-    state.toast = "已让 " + r.removed + " 台设备退出";
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { state.toast = ""; render(); }, 6000);
+    state.invite = { code: r.code, devices: r.devices };
+    showToast("已让 " + r.removed + " 台设备退出，换了新码");
   } catch (e) {
     state.inviteError = "操作不了，请检查网络再试。";
+    render();
   }
-  render();
 }
 function renderInvite() {
   const close = () => { state.sheet = null; render(); };
@@ -890,21 +874,21 @@ function renderInvite() {
   let qr = null;
   if (inv) {
     const q = qrcode(0, "M");
-    q.addData(location.origin + location.pathname + "?i=" + inv.code);
+    q.addData(joinUrl(inv.code));
     q.make();
     qr = h("div", { class: "invqr" });
     qr.innerHTML = q.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
   }
   return h("div", { class: "overlay", onclick: (e) => { if (e.target === e.currentTarget) close(); } },
     h("div", { class: "panel" },
-      h("div", { class: "phead" }, h("h3", {}, "📱 加一台手机 / 平板"), h("button", { class: "x", onclick: close }, "✕")),
-      h("p", {}, "用要加的手机或平板的", h("b", {}, "相机"), "扫这个码，照提示放到主屏幕，就登录好了，不用密码。"),
-      qr || (state.inviteError ? null : h("div", { class: "empty" }, "生成中…")),
-      inv ? h("p", { class: "hint" }, "这个码 " + inviteUntil(inv) + " 前有效（30 分钟），过了就没用了，被人拍到也不怕。") : null,
-      inv ? h("button", { class: "big", onclick: () => shareInvite(inv) }, "📤 人不在旁边：发链接（LINE / 微信）") : null,
+      h("div", { class: "phead" }, h("h3", {}, "📱 加设备 · 店员码"), h("button", { class: "x", onclick: close }, "✕")),
+      h("p", {}, "要加的手机或平板用", h("b", {}, "相机"), "扫这个码，马上就登录好了。这个码一直有效，可以截图存着。"),
+      qr || (state.inviteError ? null : h("div", { class: "empty" }, "加载中…")),
+      inv ? h("button", { class: "big", onclick: () => shareInvite(inv) }, "📤 发链接给别人（LINE / 微信）") : null,
+      h("p", { class: "hint" }, "只给店里的人：拿到这个码的人都能接单。"),
       state.inviteError ? h("div", { class: "err" }, state.inviteError) : null,
       inv ? h("p", {}, "现在有 " + inv.devices + " 台手机 / 平板是扫码登录的。") : null,
-      h("button", { class: "minor", style: "width:100%;margin-top:8px", onclick: logoutOthers }, "让扫码登录的其他设备都退出（打工的走了用）"),
+      h("button", { class: "minor", style: "width:100%;margin-top:8px", onclick: logoutOthers }, "让其他设备都退出，换新码（打工的走了用）"),
     ));
 }
 
@@ -912,9 +896,17 @@ function a2hsShown() {
   if (!A2HS) return false;
   try { return localStorage.getItem(LS_A2HS) !== "1"; } catch (e) { return true; }
 }
-function openA2hs() {
+async function openA2hs() {
   state.sheet = "a2hs";
   render();
+  if (INVITE || !KEY) return;
+  // 这台是用门店密钥登录的（网址里没有店员码）：补上店员码，主屏幕图标第一次打开就能自己登录
+  try {
+    const r = await staffRpc("chali_staff_invite", {});
+    const url = new URL(location.href);
+    url.searchParams.set("i", r.code);
+    history.replaceState(null, "", url.pathname + url.search + url.hash);
+  } catch (e) { /* 补不上：主屏幕打开时再扫一次店员码 */ }
 }
 function closeA2hs(done) {
   if (done) try { localStorage.setItem(LS_A2HS, "1"); } catch (e) { /* 存不了下次再提示 */ }
@@ -927,12 +919,12 @@ function renderA2hs() {
     h("div", { class: "panel a2hs-steps" },
       h("h3", {}, "放到主屏幕，像 App 一样打开"),
       h("ol", {},
-        h("li", {}, "点 Safari 的 ", h("b", {}, "分享"), " 按钮（方框加向上箭头，", iPhone ? "在屏幕下面" : "在右上角", "）"),
+        CHROME ? h("li", {}, "点地址栏右边的 ", h("b", {}, "分享"), " 按钮（方框加向上箭头）")
+          : h("li", {}, "点 Safari 的 ", h("b", {}, "分享"), " 按钮（方框加向上箭头，", iPhone ? "在屏幕下面；看不到就先点「···」" : "在右上角", "）"),
         h("li", {}, "往下找，点 ", h("b", {}, "添加到主屏幕")),
         h("li", {}, "点右上角 ", h("b", {}, "添加")),
       ),
-      h("p", {}, "以后点主屏幕上的「茶里接单」图标就能打开。"),
-      h("p", {}, "从主屏幕第一次打开如果显示「还没登录」，再扫一次「加设备」的码就行（主屏幕和 Safari 分开记）。"),
+      h("p", {}, "以后点主屏幕上的「茶里接单」图标就能打开，第一次打开会自己登录。"),
       h("button", { class: "big", onclick: () => closeA2hs(true) }, "放好了"),
       h("button", { class: "minor", onclick: () => closeA2hs(false) }, "以后再说"),
     ));
@@ -988,39 +980,13 @@ function draw(app) {
 }
 
 function renderSetup() {
-  const iPhone = /iPhone|iPod/.test(UA);
-  if (state.joinStep === "a2hs") {
-    return h("div", { class: "overlay" }, h("div", { class: "panel a2hs-steps" },
-      h("h3", {}, "最后一步：放到主屏幕"),
-      h("ol", {},
-        h("li", {}, "点 Safari 的 ", h("b", {}, "分享"), " 按钮（方框加向上箭头，", iPhone ? "在屏幕下面" : "在右上角", "）"),
-        h("li", {}, "往下找，点 ", h("b", {}, "添加到主屏幕")),
-        h("li", {}, "点右上角 ", h("b", {}, "添加")),
-      ),
-      h("p", {}, "放好以后点主屏幕上的「茶里接单」，就自动登录好了，以后也直接点它。"),
-      h("p", { class: "hint" }, "扫码后 30 分钟内打开都行。"),
-      h("button", { class: "minor", onclick: join }, "不放了，直接在这里用"),
-    ));
-  }
-  if (state.joinStep === "safari") {
-    return h("div", { class: "overlay" }, h("div", { class: "panel a2hs-steps" },
-      h("h3", {}, "请用 Safari 打开"),
-      h("p", {}, "现在是在微信 / LINE 里打开的，放不到主屏幕。"),
-      h("ol", {},
-        h("li", {}, "点右上角 ", h("b", {}, "···")),
-        h("li", {}, "点 ", h("b", {}, "在 Safari 中打开"), "（或「用默认浏览器打开」）"),
-        h("li", {}, "在 Safari 里照提示放到主屏幕"),
-      ),
-      h("button", { class: "minor", onclick: join }, "不放了，直接在这里用"),
-    ));
-  }
   if (state.joinStep === "joining") {
     return h("div", { class: "overlay" }, h("div", { class: "panel" }, h("h3", {}, "登录中…")));
   }
   let keyInput;
   return h("div", { class: "overlay" }, h("div", { class: "panel" },
     h("h3", {}, "这台手机 / 平板还没登录"),
-    h("p", {}, "请已经登录的人在接单屏点右上「⚙ 更多功能」→「📱 加设备」，用这台的相机扫屏幕上的码，就登录好了。"),
+    h("p", {}, "用这台的相机扫店员码就登录好了。店员码在已经登录的手机上：右上「⚙ 更多功能」→「📱 加设备」。"),
     state.setupError ? h("div", { class: "err" }, state.setupError) : null,
     h("details", {},
       h("summary", {}, "店长：用门店密钥登录"),
@@ -1498,7 +1464,7 @@ window.addEventListener("hashchange", () => {
 
 // 每 20 秒刷新一次「几分钟前」
 setInterval(() => { if (state.phase === "board" && !state.sheet) render(); }, 20000);
-if (state.phase === "board") begin(); else if (INVITE) startInvite(); else render();
+if (state.phase === "board") begin(); else if (INVITE) join(); else render();
 </script>
 </body>
 </html>
