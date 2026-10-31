@@ -175,11 +175,10 @@
   .big { width: 100%; margin-top: 18px; border: 0; border-radius: 14px; padding: 15px; background: var(--green); color: #fff; font-size: 19px; font-weight: 900; }
   .err { color: var(--danger); font-weight: 800; margin-top: 10px; }
   .panel .hint { font-size: 13px; }
-  .panel .linkbtn { display: block; width: 100%; margin-top: 12px; border: 0; background: none; color: var(--green); font-weight: 800; font-size: 15px; padding: 6px; }
-  .panel .chk { display: flex; gap: 10px; align-items: flex-start; font-weight: 700; font-size: 15px; }
-  .panel .chk input { width: 22px; height: 22px; margin: 0; flex: none; }
-  .pwstate { margin: 10px 0 4px; padding: 10px 12px; border-radius: 12px; background: var(--green-soft); color: var(--green); font-weight: 800; }
-  .pwstate.none { background: var(--orange-soft); color: #9A4A12; }
+  .invqr { width: min(300px, 70vw); margin: 14px auto 6px; }
+  .invqr svg { display: block; width: 100%; height: auto; }
+  .panel details { margin-top: 18px; color: var(--muted); font-size: 14px; }
+  .panel details summary { cursor: pointer; font-weight: 700; }
   .phead { display: flex; align-items: center; gap: 10px; }
   .phead .x { margin-left: auto; border: 0; background: var(--bg); width: 40px; height: 40px; border-radius: 50%; font-size: 18px; font-weight: 800; }
   .cat { margin-top: 14px; font-weight: 900; }
@@ -268,16 +267,17 @@
 <body>
 <div id="app"></div>
 
-<script src="config.js?v=20261101005614"></script>
-<script src="menu.js?v=20261101005614"></script>
-<script src="waiter-map.js?v=20261101005614"></script>
-<script src="delivery-reader.js?v=20261101005614"></script>
+<script src="config.js?v=20261101011330"></script>
+<script src="menu.js?v=20261101011330"></script>
+<script src="waiter-map.js?v=20261101011330"></script>
+<script src="delivery-reader.js?v=20261101011330"></script>
+<script src="vendor/qrcode.js?v=20261101011330"></script>
 <script>
 "use strict";
 
 // 网页更新后马上用新版：GitHub Pages 让手机缓存 10 分钟（微信更久）。发布时 publish-pages.sh 把 BUILD 换成发布时间、
 // 写 version.json，并给 .js 加上 ?v=；打开时发现服务器上有新版就换成带 ?v= 的网址重新打开（新网址不吃缓存）
-const BUILD = "20261101005614";
+const BUILD = "20261101011330";
 if (BUILD !== "dev") {
   fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then((r) => r.json()).then((j) => {
     const url = new URL(location.href);
@@ -290,9 +290,10 @@ if (BUILD !== "dev") {
 
 // ---------------------------------------------------------------------------
 // 设置
-//   第一次打开：输店里的登录密码（2026-11-01 起），服务器给这台设备一个令牌，存在 LS_KEY（和门店密钥放一起，后面都一样用）。
-//   二维码 / 网址里不带密钥，随便贴、随便发。打工的走了：「⚙ 更多功能 → 🔑 登录密码」改密码并让其他设备退出。
-//   收银 iPad、「茶里接单」App 还是用门店密钥：staff.html#k=门店密钥（可加 &s=门店ID），地址栏里的密钥会马上去掉；登录框里贴 48 位门店密钥也行
+//   加设备（2026-11-01 起，不用密码）：已经登录的设备点「⚙ 更多功能 → 📱 加设备」出一个码（staff.html?i=码，30 分钟内有效），
+//   新手机、平板用相机扫一下，服务器给这台设备一个令牌，存在 LS_KEY（和门店密钥放一起，后面都一样用）。
+//   打工的走了：「📱 加设备」里点「让扫码登录的其他设备都退出」。
+//   收银 iPad、「茶里接单」App 还是用门店密钥：staff.html#k=门店密钥（可加 &s=门店ID），地址栏里的密钥会马上去掉；登录页「店长：用门店密钥登录」也行
 // ---------------------------------------------------------------------------
 const CONFIG = window.CHALI_CONFIG || {};
 const MENU_BASE = window.CHALI_MENU;
@@ -335,14 +336,16 @@ function readHash() {
 }
 readHash();
 
-// 加到主屏幕（2026-11-01 用网页试用，不装 App）：iPhone、iPad 的 Safari 里右下角有「放到主屏幕」（登录页上也有），
-// 点了显示「分享 → 添加到主屏幕」的步骤。从主屏幕打开的网页和 Safari 不共用存储，第一次从主屏幕打开要再输一次登录密码。
+// 加到主屏幕（2026-11-01 用网页试用，不装 App）：iPhone、iPad 的 Safari 里右下角有「放到主屏幕」，点了显示「分享 → 添加到主屏幕」的步骤。
+// 从主屏幕打开的网页和 Safari 不共用存储：扫了加设备的码先放主屏幕，再从主屏幕打开时用同一个码登录（码在网址的 ?i= 里，主屏幕图标带着）。
 // 从主屏幕打开的、「茶里接单」App 里（WKWebView 的 UA 没有 Safari/）、微信 LINE 等 App 里打开的不显示
 const LS_A2HS = "chali-staff-a2hs-off";
 const UA = navigator.userAgent;
 const IOS = /iPhone|iPad|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
 const STANDALONE = navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
 const A2HS = IOS && /Safari\//.test(UA) && !/CriOS|FxiOS|EdgiOS|OPiOS|MicroMessenger|Line\/|FBAN|Instagram/.test(UA) && !STANDALONE;
+const INVITE = new URLSearchParams(location.search).get("i") || "";   // 扫「加设备」码打开的
+const LS_INVITE_SEEN = "chali-staff-invite-seen";                     // 这个码在这里提示过放主屏幕（主屏幕图标在 Safari 里打开时就直接登录）
 
 let STORE = localStorage.getItem(LS_STORE) || CONFIG.defaultStore || "chalichali-01";
 let KEY = localStorage.getItem(LS_KEY) || "";
@@ -364,7 +367,8 @@ const POLL_MS = 3000;
 const FULL_MS = 30000;
 
 const state = {
-  phase: KEY ? "board" : "setup",   // setup：输登录密码  board：接单
+  phase: KEY ? "board" : "setup",   // setup：还没登录（扫加设备的码）  board：接单
+  joinStep: "",                      // 扫了加设备的码："a2hs" 先提示放主屏幕 / "joining" 登录中
   setupError: "",
   orders: new Map(),
   since: null,
@@ -489,7 +493,7 @@ async function poll() {
     state.online = true;
     if (added.length) announce(added);
   } catch (e) {
-    if (e.message === "unauthorized") return logout("需要重新登录：登录密码可能换过了，请输现在的密码。");
+    if (e.message === "unauthorized") return logout("这台已经退出登录（可能有人点了「让其他设备都退出」）。请重新扫「加设备」的码。");
     state.online = false;
   }
   // 没有变化就不重画（不然列表滚动位置和新单闪烁会被打断）
@@ -803,71 +807,81 @@ async function connect(store, key) {
   render();
 }
 
-const LOGIN_ERRORS = {
-  wrong_password: "密码不对，再试一次（区分大小写）。",
-  no_password: "店里还没设登录密码：请用已经登录的手机在「⚙ 更多功能 → 🔑 登录密码」里设一个。",
-  locked: "输错太多次，锁住 10 分钟，过一会再试。",
-  unauthorized: "找不到这家店，请重新扫店里的二维码。",
-};
-async function login(password) {
-  const pw = (password || "").trim();
-  state.setupError = "";
-  if (!pw) { state.setupError = "请输入登录密码。"; render(); return; }
-  if (/^[0-9a-f]{48}$/i.test(pw)) return connect(STORE, pw);   // 贴的是门店密钥
-  try {
-    const r = await rpc("chali_staff_login", { p_store: STORE, p_password: pw, p_label: (IOS ? (/iPhone|iPod/.test(UA) ? "iPhone" : "iPad") : "网页") + (STANDALONE ? " 主屏幕" : "") });
-    if (r && r.ok) { state.loginDraft = ""; return connect(STORE, r.key); }
-    state.setupError = LOGIN_ERRORS[r && r.error] || "登录不了，请再试一次。";
-  } catch (e) {
-    state.setupError = "连不上服务器，请检查网络。";
+function deviceLabel() {
+  return (IOS ? (/iPhone|iPod/.test(UA) ? "iPhone" : "iPad") : /Android/.test(UA) ? "Android" : "网页") + (STANDALONE ? " 主屏幕" : "");
+}
+
+// 扫了「加设备」码：iPhone / iPad 的 Safari 里先提示放到主屏幕（从主屏幕打开时用同一个码登录，只登录一次）；
+// 从主屏幕打开、安卓、App 里，或者这个码在这里已经提示过（主屏幕图标在 Safari 里打开）就直接登录
+function startInvite() {
+  let seen = "";
+  try { seen = localStorage.getItem(LS_INVITE_SEEN) || ""; } catch (e) { /* 读不了当没提示过 */ }
+  if (A2HS && seen !== INVITE) {
+    try { localStorage.setItem(LS_INVITE_SEEN, INVITE); } catch (e) { /* 存不了就算了 */ }
+    state.joinStep = "a2hs";
+    render();
+    return;
   }
+  join();
+}
+async function join() {
+  state.joinStep = "joining";
+  state.setupError = "";
+  render();
+  try {
+    const r = await rpc("chali_staff_join", { p_store: STORE, p_code: INVITE, p_label: deviceLabel() });
+    if (r && r.ok) { state.joinStep = ""; return connect(STORE, r.key); }
+    state.setupError = "这个码过期了（加设备的码 30 分钟内有效）。请让已经登录的人再点一次「📱 加设备」，重新扫。";
+  } catch (e) {
+    state.setupError = "连不上服务器，请检查网络再扫一次。";
+  }
+  state.joinStep = "";
   render();
 }
 
-// 「🔑 登录密码」：设 / 改店里的登录密码；勾选的话让其他用密码登录的手机、平板都退出（打工的走了用）
-async function openPassword() {
-  state.sheet = "password";
-  state.pwDraft = "";
-  state.pwKick = false;
-  state.pwError = "";
-  state.pwInfo = null;
+// 「📱 加设备」：出一个码给新手机、平板扫；打工的走了在这里让其他设备都退出
+async function openInvite() {
+  state.sheet = "invite";
+  state.invite = null;
+  state.inviteError = "";
   render();
-  try { state.pwInfo = await staffRpc("chali_staff_login_info", {}); } catch (e) { state.pwError = "连不上服务器，请检查网络。"; }
-  if (state.sheet === "password") render();
+  try { state.invite = await staffRpc("chali_staff_invite", {}); } catch (e) { state.inviteError = "连不上服务器，请检查网络再试。"; }
+  if (state.sheet === "invite") render();
 }
-async function savePassword() {
-  const pw = (state.pwDraft || "").trim();
-  if (!pw && !state.pwKick) { state.pwError = "请输入新密码。"; render(); return; }
-  if (pw && (pw.length < 6 || pw.length > 64)) { state.pwError = "密码要 6 个字以上（数字、字母都行）。"; render(); return; }
+async function logoutOthers() {
+  if (!confirm("让其他扫码登录的手机、平板都退出？\n它们要重新扫「加设备」的码才能再用。这台、收银 iPad 和「茶里接单」App 不受影响。")) return;
   try {
-    const r = await staffRpc("chali_staff_set_password", { p_password: pw || null, p_logout_others: !!state.pwKick });
+    const r = await staffRpc("chali_staff_logout_others", {});
     state.sheet = null;
-    state.toast = (pw ? "登录密码已保存" : "") + (state.pwKick ? (pw ? "，" : "") + "其他 " + r.removed + " 台设备已退出" : "");
+    state.toast = "已让 " + r.removed + " 台设备退出";
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { state.toast = ""; render(); }, 6000);
   } catch (e) {
-    state.pwError = e.message === "bad_password" ? "密码要 6 个字以上（数字、字母都行）。" : "保存不了，请检查网络再试。";
+    state.inviteError = "操作不了，请检查网络再试。";
   }
   render();
 }
-function renderPassword() {
+function renderInvite() {
   const close = () => { state.sheet = null; render(); };
-  const info = state.pwInfo;
+  const inv = state.invite;
+  let qr = null;
+  if (inv) {
+    const q = qrcode(0, "M");
+    q.addData(location.origin + location.pathname + "?i=" + inv.code);
+    q.make();
+    qr = h("div", { class: "invqr" });
+    qr.innerHTML = q.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
+  }
+  const until = inv ? new Date(inv.expiresAt) : null;
   return h("div", { class: "overlay", onclick: (e) => { if (e.target === e.currentTarget) close(); } },
     h("div", { class: "panel" },
-      h("div", { class: "phead" }, h("h3", {}, "🔑 登录密码"), h("button", { class: "x", onclick: close }, "✕")),
-      h("p", {}, "别的手机、平板第一次打开接单屏要输这个密码，之后会记住。密码只告诉店里的人。"),
-      !info ? h("div", { class: "pwstate" }, "查询中…")
-        : info.hasPassword ? h("div", { class: "pwstate" }, "已经设了登录密码 · 现在有 " + info.devices + " 台设备用密码登录着")
-        : h("div", { class: "pwstate none" }, "还没设登录密码：别的手机、平板现在登录不了"),
-      h("label", {}, info && info.hasPassword ? "新密码（不改就空着）" : "设一个密码",
-        h("input", { id: "pwNew", type: "text", value: state.pwDraft || "", autocapitalize: "off", autocomplete: "off", spellcheck: "false", placeholder: "6 个字以上，数字、字母都行",
-          oninput: (e) => { state.pwDraft = e.target.value; if (state.pwError) { state.pwError = ""; const er = document.querySelector(".panel .err"); if (er) er.remove(); } } })),
-      h("label", { class: "chk" },
-        h("input", { type: "checkbox", checked: state.pwKick, onchange: (e) => { state.pwKick = e.target.checked; } }),
-        h("span", {}, "让其他用密码登录的手机、平板都退出，要用新密码重新登录", h("br"), h("small", { class: "hint" }, "打工的走了就勾这个并换个新密码。收银 iPad 和「茶里接单」App 不受影响。"))),
-      state.pwError ? h("div", { class: "err" }, state.pwError) : null,
-      h("button", { class: "big", onclick: savePassword }, "保存"),
+      h("div", { class: "phead" }, h("h3", {}, "📱 加一台手机 / 平板"), h("button", { class: "x", onclick: close }, "✕")),
+      h("p", {}, "用要加的手机或平板的", h("b", {}, "相机"), "扫这个码，照提示放到主屏幕，就登录好了，不用密码。"),
+      qr || (state.inviteError ? null : h("div", { class: "empty" }, "生成中…")),
+      until ? h("p", { class: "hint" }, "这个码 " + pad2(until.getHours()) + ":" + pad2(until.getMinutes()) + " 前有效（30 分钟），过了就没用了，被人拍到也不怕。") : null,
+      state.inviteError ? h("div", { class: "err" }, state.inviteError) : null,
+      inv ? h("p", {}, "现在有 " + inv.devices + " 台手机 / 平板是扫码登录的。") : null,
+      h("button", { class: "minor", style: "width:100%;margin-top:8px", onclick: logoutOthers }, "让扫码登录的其他设备都退出（打工的走了用）"),
     ));
 }
 
@@ -894,8 +908,8 @@ function renderA2hs() {
         h("li", {}, "往下找，点 ", h("b", {}, "添加到主屏幕")),
         h("li", {}, "点右上角 ", h("b", {}, "添加")),
       ),
-      h("p", {}, "以后点主屏幕上的「茶里接单」图标就能打开，不用再扫码。"),
-      h("p", {}, "从主屏幕第一次打开时要再输一次登录密码（主屏幕和 Safari 分开记），之后就不用了。"),
+      h("p", {}, "以后点主屏幕上的「茶里接单」图标就能打开。"),
+      h("p", {}, "从主屏幕第一次打开如果显示「还没登录」，再扫一次「加设备」的码就行（主屏幕和 Safari 分开记）。"),
       h("button", { class: "big", onclick: () => closeA2hs(true) }, "放好了"),
       h("button", { class: "minor", onclick: () => closeA2hs(false) }, "以后再说"),
     ));
@@ -925,7 +939,7 @@ function render() {
   const app = document.getElementById("app");
   const scrolls = [...app.querySelectorAll(".list, .panel")].map((el) => el.scrollTop);
   const active = document.activeElement;
-  const typing = active && ["lookupQ", "deliveryText", "pwNew", "loginPw"].includes(active.id) ? { id: active.id, a: active.selectionStart, b: active.selectionEnd } : null;
+  const typing = active && ["lookupQ", "deliveryText"].includes(active.id) ? { id: active.id, a: active.selectionStart, b: active.selectionEnd } : null;
   draw(app);
   if (typing) { const el = document.getElementById(typing.id); if (el) { el.focus(); el.setSelectionRange(typing.a, typing.b); } }
   [...app.querySelectorAll(".list, .panel")].forEach((el, i) => { if (scrolls[i]) el.scrollTop = scrolls[i]; });
@@ -942,7 +956,7 @@ function draw(app) {
   if (state.sheet === "lookup") app.append(renderLookup());
   if (state.sheet === "delivery") app.append(renderDelivery());
   if (state.sheet === "a2hs") app.append(renderA2hs());
-  if (state.sheet === "password") app.append(renderPassword());
+  if (state.sheet === "invite") app.append(renderInvite());
   if (state.toast) app.append(h("div", { class: "toast", role: "status" }, state.toast));
   if (state.error) app.append(h("div", { class: "banner", onclick: () => { state.error = ""; render(); } }, state.error));
   else if (!state.online) app.append(h("div", { class: "banner" }, "网络断开，正在重连…（顾客这时下的单，连上后会出现）"));
@@ -951,18 +965,33 @@ function draw(app) {
 }
 
 function renderSetup() {
-  const go = () => login(document.getElementById("loginPw").value);
-  return h("div", { class: "overlay" }, h("form", { class: "panel", onsubmit: (e) => { e.preventDefault(); go(); } },
-    h("h3", {}, "茶里接单 · 登录"),
-    h("p", {}, "输入店里的登录密码。这台手机 / 平板只要输一次，之后会记住。"),
-    // 用户名框（藏起来）让 iPhone 的「密码」能记住这个密码
-    h("input", { type: "text", name: "username", value: STORE, autocomplete: "username", readonly: true, style: "display:none" }),
-    h("label", {}, "登录密码", h("input", { id: "loginPw", type: "password", name: "password", value: state.loginDraft || "", autocapitalize: "off", autocomplete: "current-password",
-      oninput: (e) => { state.loginDraft = e.target.value; } })),
+  const iPhone = /iPhone|iPod/.test(UA);
+  if (state.joinStep === "a2hs") {
+    return h("div", { class: "overlay" }, h("div", { class: "panel a2hs-steps" },
+      h("h3", {}, "最后一步：放到主屏幕"),
+      h("ol", {},
+        h("li", {}, "点 Safari 的 ", h("b", {}, "分享"), " 按钮（方框加向上箭头，", iPhone ? "在屏幕下面" : "在右上角", "）"),
+        h("li", {}, "往下找，点 ", h("b", {}, "添加到主屏幕")),
+        h("li", {}, "点右上角 ", h("b", {}, "添加")),
+      ),
+      h("p", {}, "放好以后点主屏幕上的「茶里接单」，就自动登录好了，以后也直接点它。"),
+      h("p", { class: "hint" }, "扫码后 30 分钟内打开都行。"),
+      h("button", { class: "minor", onclick: join }, "不放了，直接在这里用"),
+    ));
+  }
+  if (state.joinStep === "joining") {
+    return h("div", { class: "overlay" }, h("div", { class: "panel" }, h("h3", {}, "登录中…")));
+  }
+  let keyInput;
+  return h("div", { class: "overlay" }, h("div", { class: "panel" },
+    h("h3", {}, "这台手机 / 平板还没登录"),
+    h("p", {}, "请已经登录的人在接单屏点右上「⚙ 更多功能」→「📱 加设备」，用这台的相机扫屏幕上的码，就登录好了。"),
     state.setupError ? h("div", { class: "err" }, state.setupError) : null,
-    h("button", { class: "big", type: "submit" }, "登录"),
-    h("p", { class: "hint" }, "密码问店长。"),
-    a2hsShown() ? h("button", { class: "linkbtn", type: "button", onclick: openA2hs }, "📲 先放到主屏幕，以后点图标打开 →") : null,
+    h("details", {},
+      h("summary", {}, "店长：用门店密钥登录"),
+      h("label", {}, "门店密钥", keyInput = h("input", { type: "password", autocapitalize: "off", autocomplete: "off" })),
+      h("button", { class: "big", onclick: () => connect(STORE, keyInput.value) }, "登录"),
+    ),
   ));
 }
 
@@ -1013,7 +1042,7 @@ function renderHeader() {
     h("button", { class: "tool", onclick: openLookup }, "🔍 查饮品"),
     h("button", { class: "tool", onclick: () => { state.sheet = "history"; render(); } }, "今日记录"),
     h("button", { class: "tool", onclick: () => window.open("poster.html", "_blank") }, "二维码"),
-    h("button", { class: "tool", onclick: openPassword }, "🔑 登录密码"),
+    h("button", { class: "tool", onclick: openInvite }, "📱 加设备"),
     conn,
     h("button", { class: "tool mode", onclick: () => setSimple(true) }, "简洁模式"),
   );
@@ -1434,7 +1463,7 @@ window.addEventListener("hashchange", () => {
 
 // 每 20 秒刷新一次「几分钟前」
 setInterval(() => { if (state.phase === "board" && !state.sheet) render(); }, 20000);
-if (state.phase === "board") begin(); else render();
+if (state.phase === "board") begin(); else if (INVITE) startInvite(); else render();
 </script>
 </body>
 </html>
