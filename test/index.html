@@ -116,6 +116,12 @@
     background: var(--green-soft); color: var(--green); font-size: 24px; font-weight: 700;
     display: grid; place-items: center;
   }
+  /* 饮品照片和介绍（2026-11-03，iPad 收银 App 里加的） */
+  .item .thumb { flex: 0 0 auto; width: 76px; height: 76px; border-radius: 12px; object-fit: cover; background: #EEE; }
+  .item .desc { font-size: 12.5px; color: #555; margin-top: 3px; line-height: 1.4;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .sheet .photo { width: 100%; max-height: 260px; object-fit: cover; border-radius: 14px; margin-bottom: 12px; display: block; background: #EEE; }
+  .sheet .desc { font-size: 14px; color: #444; line-height: 1.55; margin: 8px 0 2px; white-space: pre-line; }
   .item.soldout { opacity: 0.55; }
   .item.soldout .plus { display: none; }
   .stamp {
@@ -211,14 +217,14 @@
 <div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
 <div class="cartbar hidden" id="cartbar"></div>
 
-<script src="config.js?v=20261101015334"></script>
-<script src="menu-i18n.js?v=20261101015334"></script>
+<script src="config.js?v=20261103021813"></script>
+<script src="menu-i18n.js?v=20261103021813"></script>
 <script>
 "use strict";
 
 // 网页更新后马上用新版：GitHub Pages 让手机缓存 10 分钟（微信更久）。发布时 publish-pages.sh 把 BUILD 换成发布时间、
 // 写 version.json，并给 .js 加上 ?v=；打开时发现服务器上有新版就换成带 ?v= 的网址重新打开（新网址不吃缓存）
-const BUILD = "20261101015334";
+const BUILD = "20261103021813";
 if (BUILD !== "dev") {
   fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then((r) => r.json()).then((j) => {
     const url = new URL(location.href);
@@ -237,6 +243,8 @@ const params = new URLSearchParams(location.search);
 const STORE = params.get("s") || CONFIG.defaultStore || "chalichali-01";
 const SEAT = (params.get("t") || "").trim().slice(0, 20);
 const REST = (CONFIG.restUrl || (CONFIG.supabaseUrl || "").replace(/\/+$/, "") + "/rest/v1").replace(/\/+$/, "");
+// 饮品照片在 Supabase Storage 的公开桶 menu-photos（自建 PostgREST 没有照片）
+const PHOTO_BASE = CONFIG.supabaseUrl ? CONFIG.supabaseUrl.replace(/\/+$/, "") + "/storage/v1/object/public/menu-photos/" : "";
 const ORDER_KEY = "chali-order-" + STORE;
 
 const T = {
@@ -650,6 +658,8 @@ let state = {
   storeName: "茶里茶里",
   accepting: false,
   menu: null,
+  // 饮品照片和介绍：{饮品ID: {photo: 路径, desc: {zh, ja, en, …}}}
+  extras: {},
   today: "",
   // 店里只贴一个码（2026-10-31）：打开先选堂食还是打包；旧的带桌号的码（?t=）直接算店内
   dining: SEAT ? "eatIn" : null,
@@ -835,6 +845,17 @@ function renderMenu() {
   return frag;
 }
 
+function photoOf(item) {
+  const x = state.extras[item.id];
+  return x && x.photo && PHOTO_BASE ? PHOTO_BASE + x.photo : null;
+}
+
+// 介绍：顾客的语言 → 日文 → 英文 → 中文（店员写中文，App 翻译其他语言）
+function descOf(item) {
+  const d = (state.extras[item.id] || {}).desc || {};
+  return d[lang] || d.ja || d.en || d.zh || "";
+}
+
 function renderItem(item, cat) {
   const soldOut = isSoldOut(item);
   const prices = sizesOf(item).map((s) => s + " " + yen(basePrice(item, s))).join(" / ");
@@ -844,9 +865,11 @@ function renderItem(item, cat) {
     disabled: soldOut || !state.accepting,
     onclick: () => openItem(item),
   },
+    photoOf(item) ? h("img", { class: "thumb", src: photoOf(item), alt: "", loading: "lazy" }) : null,
     h("div", { class: "names" },
       h("div", { class: "name" }, nameOf(item)),
       h("div", { class: "alt" }, altOf(item)),
+      descOf(item) ? h("div", { class: "desc" }, descOf(item)) : null,
       h("div", { class: "price" }, h("span", { class: "p" }, prices),
         includedText(item) ? h("span", { class: "inc" }, includedText(item)) : null,
         item.allowedTemps.includes("hot") ? h("span", { class: "hot" }, t("hot")) : null),
@@ -884,11 +907,13 @@ function openItem(item) {
     const toppings = state.menu.toppings.filter((tp) => item.allowedToppingIDs.includes(tp.id));
     const sizes = sizesOf(item);
     fill(sheet,
+      photoOf(item) ? h("img", { class: "photo", src: photoOf(item), alt: "" }) : null,
       h("div", { class: "head" },
         h("div", {}, h("h3", {}, nameOf(item)), h("div", { class: "alt" }, altOf(item),
           includedText(item) ? h("span", { class: "inc" }, includedText(item)) : null)),
         h("button", { class: "close", "aria-label": "close", onclick: closeSheet }, "✕"),
       ),
+      descOf(item) ? h("p", { class: "desc" }, descOf(item)) : null,
       sizes.length > 1 ? group(t("size"), sizes.map((s) =>
         chip(s, draft.size === s, () => { draft.size = s; draw(); }, yen(basePrice(item, s))))) : null,
       item.allowedTemps.length > 1 ? group(t("temp"), item.allowedTemps.map((tp) =>
@@ -1090,6 +1115,7 @@ async function loadMenu() {
     state.storeName = data.storeName || state.storeName;
     state.accepting = !!data.accepting;
     state.menu = data.menu || { categories: [], items: [], toppings: [] };
+    state.extras = data.extras || {};
     state.today = data.businessDay;
     if (!state.activeCat && state.menu.categories.length) state.activeCat = state.menu.categories[0].id;
     // 购物车里已经售罄或下架的去掉
