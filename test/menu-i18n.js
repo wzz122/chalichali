@@ -72,14 +72,10 @@
     "mango-yogurt": ["Sinh tố xoài", "망고 스무디", "Манговый смузи", "สมูทตี้มะม่วง", "Smoothie Mangga"],
 
     // 季节限定
-    "guava-grape": ["Sữa ổi nho", "구아바 포도 밀크", "Гуава и виноград с молоком", "นมฝรั่งชมพูองุ่น", "Susu Jambu Biji Anggur"],
-    "guava-lemon": ["Trà ổi chanh", "구아바 레몬티", "Чай с гуавой и лимоном", "ชาฝรั่งชมพูมะนาว", "Teh Jambu Biji Lemon"],
-    "lychee-guava": ["Sữa vải ổi", "리치 구아바 밀크", "Личи и гуава с молоком", "นมลิ้นจี่ฝรั่งชมพู", "Susu Leci Jambu Biji"],
-    "guava-cheese": ["Trà ổi kem phô mai", "구아바 치즈티", "Чай с гуавой и сырной пенкой", "ชาฝรั่งชมพูชีสโฟม", "Teh Jambu Biji Cheese Foam"],
-    "passion-tea": ["Trà chanh dây", "패션프루트 티", "Чай с маракуйей", "ชาเสาวรส", "Teh Markisa"],
-    "passion-milk": ["Sữa kiwi chanh dây", "키위 패션프루트 밀크", "Киви и маракуйя с молоком", "นมกีวีเสาวรส", "Susu Kiwi Markisa"],
-    "grape-sago": ["Trà sữa nho xanh sago", "청포도 사고 밀크티", "Молочный чай с зелёным виноградом и саго", "ชานมองุ่นเขียวสาคู", "Milk Tea Anggur Hijau Sagu"],
-    "guava-mango-sago": ["Trà sữa ổi xoài sago", "구아바 망고 사고 밀크티", "Молочный чай с гуавой, манго и саго", "ชานมฝรั่งชมพูมะม่วงสาคู", "Milk Tea Jambu Biji Mangga Sagu"],
+    "pear-longan": ["Lê nhãn trân châu", "용안 배 타피오카", "Груша с лонганом и тапиокой", "สาลี่ลำไยไข่มุก", "Pir Lengkeng Boba"],
+    "pear-coco": ["Sữa dừa lê", "배 코코넛 밀크", "Груша с кокосовым молоком", "นมมะพร้าวสาลี่", "Susu Kelapa Pir"],
+    "pear-cheese": ["Trà lê kem phô mai", "배 치즈티", "Чай с грушей и сырной пенкой", "ชาสาลี่ชีสโฟม", "Teh Pir Cheese Foam"],
+    "pear-passion": ["Trà lê chanh dây", "패션프루트 배 티", "Чай с грушей и маракуйей", "ชาสาลี่เสาวรส", "Teh Pir Markisa"],
   };
 
   const out = { vi: {}, ko: {}, ru: {}, th: {}, id: {} };
