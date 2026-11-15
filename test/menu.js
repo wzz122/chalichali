@@ -1,4 +1,4 @@
-// 茶里茶里 菜单（按店里菜单屏 2026 年 10 月版录入，去掉已下架的 2 款，加上桂圆雪梨汤，共 47 款）
+// 茶里茶里 菜单（按店里菜单屏 2026 年 10 月版录入，2026-11-14 季节限定换成雪梨新品 4 款，去掉已下架的 2 款，共 42 款）
 // 接单屏（staff.html）开始接单时把这份菜单发布到服务器，顾客页面从服务器读。
 // 改菜单只改这个文件；价格以服务器按这份菜单重新计算为准。
 //
@@ -76,15 +76,11 @@
     ["berry-yogurt", "special", "莓莓优酪冰", "ストロベリースムージー", "Strawberry Smoothie", 780, null],
     ["mango-yogurt", "special", "多芒优酪冰", "マンゴースムージー", "Mango Smoothie", 780, null],
 
-    ["guava-grape", "season", "粉芭葡奶", "グアバグレープミルク", "Guava Grape Milk", null, 850],
-    ["guava-lemon", "season", "粉芭柠檬", "グアバレモンティー", "Guava Lemon Tea", null, 850],
-    ["lychee-guava", "season", "荔荔粉芭撞奶", "ライチグアバミルク", "Lychee Guava Milk", null, 850],
-    ["guava-cheese", "season", "芝芝粉芭", "グアバチーズティー", "Guava Cheese Tea", null, 850],
-    ["passion-tea", "season", "酸Q百香果", "パッションフルーツティー", "Passion Fruit Tea", null, 850],
-    ["passion-milk", "season", "奇异百香双打奶", "パッションフルーツミルク", "Passion Fruit Milk", null, 850],
-    ["grape-sago", "season", "青提茉莉奶露", "グレープサゴミルクティー", "Grape Sago Milk Tea", null, 850],
-    ["guava-mango-sago", "season", "芭乐多芒奶露", "グアバマンゴーサゴミルクティー", "Guava Mango Sago Milk Tea", null, 850],
-    ["longan-pear-soup", "season", "桂圆雪梨汤", "ロンガン梨スープ", "Longan Pear Soup", null, 850],
+    // 2026-11-14 按店里新菜单屏：季节限定换成雪梨新品 4 款（旧的粉芭、百香果、奶露 8 款撤下）
+    ["pear-longan", "season", "桂圆雪梨汤", "竜眼タピオカ梨", "Longan Pear Tapioca", 720, 850],
+    ["pear-coco", "season", "生椰雪梨", "梨ココナツミルク", "Pear Coconut Milk", 720, 850],
+    ["pear-cheese", "season", "芝芝雪梨", "梨チーズティー", "Pear Cheese Tea", null, 850],
+    ["pear-passion", "season", "百香雪梨", "パッション梨", "Passion Fruit Pear Tea", null, 850],
   ];
 
   // 不能选冰量的饮品（冰沙 4 款 + 杨枝甘露，用户 2026-11-15）。要加一款，把它的 id 写进来。
@@ -96,7 +92,7 @@
   const COLD_TEMPS = ["normalIce", "lessIce", "noIce"];
   const SWEETNESS = [120, 100, 70, 50, 30, 0];
   // 不是珍珠奶茶、但能做 HOT 的，默认热的
-  const HOT_BY_DEFAULT = ["longan-pear-soup"];
+  const HOT_BY_DEFAULT = [];
 
   const items = RAW.map(([id, categoryID, name, nameJP, nameEN, m, l]) => {
     const prices = {};
@@ -114,7 +110,7 @@
       defaultSweetness: 100,
       allowedToppingIDs: TOPPINGS.map((t) => t.id),
       // 标配小料（含在价格里，只用来显示）
-      includedToppingIDs: categoryID === "milk" ? ["pearl"] : [],
+      includedToppingIDs: categoryID === "milk" || id === "pear-longan" ? ["pearl"] : [],
       soldOut: false,
     };
   });
@@ -123,9 +119,8 @@
     if (!items.some((i) => i.id === id)) throw new Error("menu.js: 找不到饮品 " + id);
   }
 
-  // 接单屏、收银 App 认得，但先不放到顾客页面的饮品（接单屏发布菜单时去掉）。
-  // 桂圆雪梨汤：规格、默认热、日文名还没和店里确认，确认后从这里删掉就上顾客页。
-  window.CHALI_CUSTOMER_HIDDEN = ["longan-pear-soup"];
+  // 接单屏、收银 App 认得，但先不放到顾客页面的饮品（接单屏发布菜单时去掉）。现在没有。
+  window.CHALI_CUSTOMER_HIDDEN = [];
 
   window.CHALI_MENU = {
     storeName: "茶里茶里",
