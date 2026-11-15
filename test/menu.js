@@ -1,12 +1,15 @@
-// 茶里茶里 菜单（按店里菜单屏录入；2026-11-14 按新菜单屏把季节限定换成雪梨新品 4 款）
+// 茶里茶里 菜单（按店里菜单屏 2026 年 10 月版录入，去掉已下架的 2 款，加上桂圆雪梨汤，共 47 款）
 // 接单屏（staff.html）开始接单时把这份菜单发布到服务器，顾客页面从服务器读。
 // 改菜单只改这个文件；价格以服务器按这份菜单重新计算为准。
 //
+// 店员确认过的规则（2026-11-15）：
+//   - 冰沙不能选冰量（顾客页面不显示冰量这一行）：见下面的 NO_ICE_CHOICE
+//   - 杨枝甘露不能选冰量、也不能调甜度：NO_ICE_CHOICE 和 FIXED_SWEETNESS 里都有它
 // 还没在店里确认的规则（先按常见做法设置）：
-//   - 只有珍珠奶茶能做 HOT，其他只能冷饮（菜单屏上写的）
-//   - 冰沙（スムージー）不能调冰量
-//   - 所有饮品都能调甜度、都能加任意小料
-//   - 榴莲那款的中文名被售罄贴纸挡住，暂写「榴莲芒芒」
+//   - 只有珍珠奶茶能做 HOT，其他只能冷饮（菜单屏上写的）；桂圆雪梨汤例外（2026-11-07 用户：店里在卖，¥850，也能做冰的）
+//   - 其他饮品都能调甜度、都能加任意小料
+// 已下架（店里不做了，2026-11-15）：多肉车厘子（チェリーチーズティー）、榴莲芒芒（ドリアンマンゴー）。
+// 菜单屏上还印着这两款，但这里不再列出。
 (function () {
   "use strict";
 
@@ -44,7 +47,6 @@
 
     ["kiwi-cheese", "fruit", "奇异之旅", "キウイチーズティー", "Kiwi Cheese Tea", null, 780],
     ["dragon-cheese", "fruit", "粉红先生", "ドラゴンフルーツチーズティー", "Dragon Fruit Cheese Tea", null, 850],
-    ["cherry-cheese", "fruit", "多肉车厘子", "チェリーチーズティー", "Cherry Cheese Tea", null, 850],
     ["grape-cheese", "fruit", "多肉葡萄", "グレープチーズティー", "Grape Cheese Tea", null, 780],
     ["straw-cheese", "fruit", "草莓芝士", "ストロベリーチーズティー", "Strawberry Cheese Tea", null, 780],
     ["straw-ole", "fruit", "草莓欧蕾", "ストロベリーチーズオーレ", "Strawberry Cheese au Lait", null, 780],
@@ -68,41 +70,62 @@
     ["lemon-sijiqing", "lemon", "爆柠四季青", "レモンシキシュンティー", "Lemon Four Seasons Tea", null, 640],
     ["lemon-green", "lemon", "整颗爆柠绿", "レモンジャスミングリーンティー", "Lemon Jasmine Green Tea", null, 640],
 
-    ["durian-mango", "special", "榴莲芒芒", "ドリアンマンゴー", "Durian Mango", 780, null],
     ["salt-osmanthus", "special", "老盐桂花牛乳茶", "塩桂花ミルク", "Salted Osmanthus Milk", 680, null],
     ["coco-redbean", "special", "椰冻冻红豆沙", "あずきスムージー", "Red Bean Smoothie", 680, null],
     ["avocado-yogurt", "special", "牛油优酪冰", "アボカドスムージー", "Avocado Smoothie", 780, null],
     ["berry-yogurt", "special", "莓莓优酪冰", "ストロベリースムージー", "Strawberry Smoothie", 780, null],
     ["mango-yogurt", "special", "多芒优酪冰", "マンゴースムージー", "Mango Smoothie", 780, null],
 
-    ["pear-longan", "season", "桂圆雪梨汤", "竜眼タピオカ梨", "Longan Pear Tapioca", 720, 850],
-    ["pear-coco", "season", "生椰雪梨", "梨ココナツミルク", "Pear Coconut Milk", 720, 850],
-    ["pear-cheese", "season", "芝芝雪梨", "梨チーズティー", "Pear Cheese Tea", null, 850],
-    ["pear-passion", "season", "百香雪梨", "パッション梨", "Passion Fruit Pear Tea", null, 850],
+    ["guava-grape", "season", "粉芭葡奶", "グアバグレープミルク", "Guava Grape Milk", null, 850],
+    ["guava-lemon", "season", "粉芭柠檬", "グアバレモンティー", "Guava Lemon Tea", null, 850],
+    ["lychee-guava", "season", "荔荔粉芭撞奶", "ライチグアバミルク", "Lychee Guava Milk", null, 850],
+    ["guava-cheese", "season", "芝芝粉芭", "グアバチーズティー", "Guava Cheese Tea", null, 850],
+    ["passion-tea", "season", "酸Q百香果", "パッションフルーツティー", "Passion Fruit Tea", null, 850],
+    ["passion-milk", "season", "奇异百香双打奶", "パッションフルーツミルク", "Passion Fruit Milk", null, 850],
+    ["grape-sago", "season", "青提茉莉奶露", "グレープサゴミルクティー", "Grape Sago Milk Tea", null, 850],
+    ["guava-mango-sago", "season", "芭乐多芒奶露", "グアバマンゴーサゴミルクティー", "Guava Mango Sago Milk Tea", null, 850],
+    ["longan-pear-soup", "season", "桂圆雪梨汤", "ロンガン梨スープ", "Longan Pear Soup", null, 850],
   ];
+
+  // 不能选冰量的饮品（冰沙 4 款 + 杨枝甘露，用户 2026-11-15）。要加一款，把它的 id 写进来。
+  const NO_ICE_CHOICE = ["coco-redbean", "avocado-yogurt", "berry-yogurt", "mango-yogurt", "yangzhi"];
+  // 不能调甜度的饮品。要加一款，把它的 id 写进来。
+  const FIXED_SWEETNESS = ["yangzhi"];
 
   const ALL_TEMPS = ["hot", "normalIce", "lessIce", "roomTemp", "noIce"];
   const COLD_TEMPS = ["normalIce", "lessIce", "noIce"];
   const SWEETNESS = [120, 100, 70, 50, 30, 0];
+  // 不是珍珠奶茶、但能做 HOT 的，默认热的
+  const HOT_BY_DEFAULT = ["longan-pear-soup"];
 
   const items = RAW.map(([id, categoryID, name, nameJP, nameEN, m, l]) => {
     const prices = {};
     if (m != null) prices.m = m;
     if (l != null) prices.l = l;
-    const smoothie = nameJP.includes("スムージー");
+    // 只剩一个选项 = 不能选：顾客页面不显示那一行，订单上也不写冰量 / 甜度
+    const noIceChoice = NO_ICE_CHOICE.includes(id);
+    const fixedSweetness = FIXED_SWEETNESS.includes(id);
     return {
       id, categoryID, name, nameJP, nameEN, prices,
       defaultSize: l != null ? "L" : "M",
-      allowedTemps: categoryID === "milk" ? ALL_TEMPS : smoothie ? ["normalIce"] : COLD_TEMPS,
-      defaultTemp: "normalIce",
-      allowedSweetness: SWEETNESS,
+      allowedTemps: noIceChoice ? ["normalIce"] : categoryID === "milk" || HOT_BY_DEFAULT.includes(id) ? ALL_TEMPS : COLD_TEMPS,
+      defaultTemp: HOT_BY_DEFAULT.includes(id) ? "hot" : "normalIce",
+      allowedSweetness: fixedSweetness ? [100] : SWEETNESS,
       defaultSweetness: 100,
       allowedToppingIDs: TOPPINGS.map((t) => t.id),
       // 标配小料（含在价格里，只用来显示）
-      includedToppingIDs: categoryID === "milk" || id === "pear-longan" ? ["pearl"] : [],
+      includedToppingIDs: categoryID === "milk" ? ["pearl"] : [],
       soldOut: false,
     };
   });
+
+  for (const id of NO_ICE_CHOICE.concat(FIXED_SWEETNESS)) {
+    if (!items.some((i) => i.id === id)) throw new Error("menu.js: 找不到饮品 " + id);
+  }
+
+  // 接单屏、收银 App 认得，但先不放到顾客页面的饮品（接单屏发布菜单时去掉）。
+  // 桂圆雪梨汤：规格、默认热、日文名还没和店里确认，确认后从这里删掉就上顾客页。
+  window.CHALI_CUSTOMER_HIDDEN = ["longan-pear-soup"];
 
   window.CHALI_MENU = {
     storeName: "茶里茶里",
