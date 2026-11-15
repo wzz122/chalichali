@@ -6,7 +6,7 @@
 //   - 冰沙不能选冰量（顾客页面不显示冰量这一行）：见下面的 NO_ICE_CHOICE
 //   - 杨枝甘露不能选冰量、也不能调甜度：NO_ICE_CHOICE 和 FIXED_SWEETNESS 里都有它
 // 还没在店里确认的规则（先按常见做法设置）：
-//   - 只有珍珠奶茶能做 HOT，其他只能冷饮（菜单屏上写的）；桂圆雪梨汤例外（2026-11-07 用户：店里在卖，¥850，也能做冰的）
+//   - 只有珍珠奶茶能做 HOT，其他只能冷饮（菜单屏上写的）；桂圆雪梨汤例外（2026-11-07 用户：也能做冰的；微信接龙里有人点「热饮」），默认热的
 //   - 其他饮品都能调甜度、都能加任意小料
 // 已下架（店里不做了，2026-11-15）：多肉车厘子（チェリーチーズティー）、榴莲芒芒（ドリアンマンゴー）。
 // 菜单屏上还印着这两款，但这里不再列出。
@@ -92,7 +92,7 @@
   const COLD_TEMPS = ["normalIce", "lessIce", "noIce"];
   const SWEETNESS = [120, 100, 70, 50, 30, 0];
   // 不是珍珠奶茶、但能做 HOT 的，默认热的
-  const HOT_BY_DEFAULT = [];
+  const HOT_BY_DEFAULT = ["pear-longan"];
 
   const items = RAW.map(([id, categoryID, name, nameJP, nameEN, m, l]) => {
     const prices = {};
